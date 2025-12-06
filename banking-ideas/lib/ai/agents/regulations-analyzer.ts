@@ -6,50 +6,52 @@ export async function analyzeRegulations(data: ValidatedIdea): Promise<Regulatio
   const { object } = await generateObject({
     model: anthropic("claude-3-haiku-20240307"),
     schema: RegulationsAnalysisSchema,
-    prompt: `Tu ești un COMPLIANCE OFFICER și REGULATORY EXPERT cu 20 ani experiență în banking la nivel european.
+    prompt: `You are a COMPLIANCE OFFICER and REGULATORY EXPERT with 20 years of experience in European banking.
 
-Analizează riscurile regulatorii și AJUTĂ echipa să navigheze peisajul complex de compliance.
+Analyze regulatory risks and HELP the team navigate the complex compliance landscape.
 
-=== INPUT DE LA DEVELOPER ===
-Titlu proiect: ${data.ideaTitle}
-Descriere: ${data.bigIdea}
-Regulamente menționate: ${data.applicableRegulations?.join(", ") || "nespecificat"}
-Note compliance de la developer: ${data.complianceNotes || "nespecificat"}
-Tehnologii folosite: ${data.coreTechnologies?.join(", ") || "N/A"}
-Target segment: ${data.targetSegment || "N/A"}
+=== INPUT FROM DEVELOPER ===
+Project title: ${data.ideaTitle}
+Description: ${data.bigIdea}
+Regulations mentioned: ${data.applicableRegulations?.join(", ") || "Not specified"}
+Compliance notes from developer: ${data.complianceNotes || "Not specified"}
+Technologies used: ${data.coreTechnologies?.join(", ") || "Not specified"}
+Target segment: ${data.targetSegment || "Not specified"}
 
-=== CE TREBUIE SĂ FACI ===
+=== YOUR TASKS ===
 
-1. **complianceStatus**: Evaluează statusul REAL (nu fi prea optimist)
-   - "Compliant" - toate cerințele sunt îndeplinite
-   - "Partial" - unele aspecte necesită muncă suplimentară
-   - "Needs-Review" - necesită audit profesional
-   - "Non-Compliant" - probleme serioase de rezolvat
+1. **complianceStatus**: Evaluate the REAL status (don't be overly optimistic)
+   - "compliant" - All requirements are met
+   - "partial" - Some aspects need additional work
+   - "needs-review" - Requires professional audit
+   - "non-compliant" - Serious issues to resolve
 
-2. **keyRegulations**: Lista COMPLETĂ de regulamente aplicabile (5-10)
-   - Include ce a menționat developerul
-   - ADAUGĂ regulamente pe care LE-A OMIS dar sunt relevante
-   - Pentru banking în EU: GDPR, PSD2, AML/KYC, DORA, MiFID II, Basel III/IV, eIDAS, NIS2
-   - Fii SPECIFIC: nu doar "GDPR" ci "GDPR Art. 25 - Privacy by Design"
+2. **keyRegulations**: COMPLETE list of applicable regulations (5-10)
+   - Include what the developer mentioned
+   - ADD regulations they MISSED but are relevant
+   - For banking in EU: GDPR, PSD2, AML/KYC, DORA, MiFID II, Basel III/IV, eIDAS, NIS2
+   - Be SPECIFIC: not just "GDPR" but "GDPR Art. 25 - Privacy by Design" when applicable
 
-3. **riskLevel**: Evaluează riscul regulatory
-   - "Low" - implementare straightforward, risc minim
-   - "Medium" - necesită atenție la anumite aspecte
-   - "High" - riscuri semnificative, necesită experți
-   - "Critical" - potențiale blocaje majore
+3. **riskLevel**: Evaluate regulatory risk
+   - "low" - Straightforward implementation, minimal risk
+   - "medium" - Requires attention to certain aspects
+   - "high" - Significant risks, needs experts
+   - "critical" - Potential major blockers
 
-4. **complianceSummary**: AICI ADAUGI VALOARE REALĂ! (150-250 cuvinte)
-   - NU repeta ce a zis developerul
-   - IDENTIFICĂ GAP-URI în ce a menționat
-   - Oferă PAȘI CONCREȚI de urmat pentru compliance
-   - Menționează RISCURI specifice și cum să le mitigeze
-   - Sugerează CERTIFICĂRI sau AUDITURI necesare
-   - Dă un TIMELINE estimat pentru compliance complet
-   - Menționează ce DOCUMENTAȚIE trebuie pregătită
+4. **complianceSummary**: THIS IS WHERE YOU ADD REAL VALUE! (150-250 words)
+   - DO NOT repeat what the developer said
+   - IDENTIFY GAPS in what they mentioned
+   - Provide CONCRETE STEPS for compliance
+   - Mention SPECIFIC RISKS and how to mitigate them
+   - Suggest CERTIFICATIONS or AUDITS needed
+   - Give an estimated TIMELINE for full compliance
+   - Mention what DOCUMENTATION needs to be prepared
    
-   Exemplu: "While the developer has correctly identified GDPR and PSD2 requirements, several critical compliance gaps exist: (1) DORA compliance is mandatory by Jan 2025 for all ICT providers to banks - a detailed operational resilience framework is needed; (2) For C-based systems handling financial data, OWASP ASVS Level 2 certification is recommended; (3) Consider SOC 2 Type II audit for enterprise adoption. Immediate actions: conduct a Data Protection Impact Assessment (DPIA), implement comprehensive audit logging, establish incident response procedures. Timeline: 3-4 months for basic compliance, 6-8 months for full certification."
+   Example: "While the developer has correctly identified GDPR and PSD2 requirements, several critical compliance gaps exist: (1) DORA compliance is mandatory by Jan 2025 for all ICT providers to banks—a detailed operational resilience framework is needed; (2) For C-based systems handling financial data, OWASP ASVS Level 2 certification is recommended; (3) Consider SOC 2 Type II audit for enterprise adoption. Immediate actions: conduct a Data Protection Impact Assessment (DPIA), implement comprehensive audit logging, establish incident response procedures. Timeline: 3-4 months for basic compliance, 6-8 months for full certification."
 
-IMPORTANT: Fii un ADVISOR practic, nu un robot care listează regulamente!`,
+IMPORTANT: Be a PRACTICAL ADVISOR, not a robot listing regulations!
+
+ALL OUTPUT MUST BE IN ENGLISH.`,
   });
 
   return object;

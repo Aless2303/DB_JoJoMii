@@ -9,96 +9,81 @@ export async function calculateStatistics(
   const { object } = await generateObject({
     model: anthropic("claude-3-haiku-20240307"),
     schema: StatisticsOutputSchema,
-    prompt: `Tu ești un INVESTMENT COMMITTEE MEMBER la Deutsche Bank evaluând propuneri pentru finanțare.
+    prompt: `You are a SENIOR INVESTMENT COMMITTEE MEMBER at Deutsche Bank.
 
-Evaluează această idee RIGUROS și oferă un verdict final.
+=== CRITICAL: PRE-SCORING ALREADY DONE ===
 
-=== ANALIZA AGREGATĂ ===
-HEADLINE: ${data.basicInfo.headline}
-TAGLINE: ${data.basicInfo.tagline}
-PROBLEM: ${data.basicInfo.problemSummary}
-KEY BENEFITS: ${data.basicInfo.keyBenefits?.join(", ") || "N/A"}
+The validator has ALREADY analyzed this submission for consistency and credibility.
 
-TECH STACK: ${data.technologies.primaryTech?.join(", ") || "N/A"}
-INNOVATION LEVEL: ${data.technologies.innovationLevel}
-TECH SUMMARY: ${data.technologies.techSummary}
+**PRE-SCORING RESULTS (from validator):**
+- Credibility Score: ${data.originalData.credibilityScore}/100
+- Banking Relevance: ${data.originalData.bankingRelevance}
+- Is Satirical/Fake: ${data.originalData.isSatiricalOrFake}
+- Maximum Possible Score: ${data.originalData.maxPossibleScore}
+- Consistency Issues Found: ${data.originalData.consistencyIssues?.join("; ") || "None"}
 
-BUSINESS SEGMENT: ${data.businessContext.segment}
-REVENUE MODEL: ${data.businessContext.revenueModel}
-MARKET OPPORTUNITY: ${data.businessContext.marketOpportunity}
-BUSINESS VALUE: ${data.businessContext.businessValue}
-SCALABILITY: ${data.businessContext.scalabilityScore}
+**YOUR SCORES CANNOT EXCEED maxPossibleScore (${data.originalData.maxPossibleScore})!**
 
-COMPLIANCE STATUS: ${data.regulations.complianceStatus}
-RISK LEVEL: ${data.regulations.riskLevel}
-KEY REGULATIONS: ${data.regulations.keyRegulations?.join(", ") || "N/A"}
+=== SUBMISSION SUMMARY ===
+Title: ${data.originalData.ideaTitle}
+Description: ${data.originalData.bigIdea}
+Team: ${data.originalData.teamComposition}
+Tech Summary: ${data.technologies.techSummary}
+Business Value: ${data.businessContext.businessValue}
+Readiness: ${data.differentiators.readinessLevel}
 
-USP: ${data.differentiators.uniqueSellingPoint}
-COMPETITIVE ADVANTAGE: ${data.differentiators.competitiveAdvantage}
-READINESS: ${data.differentiators.readinessLevel}
+=== SCORING RULES ===
 
-TEAM: ${data.otherDetails.teamSize}
-HIGHLIGHTS: ${data.otherDetails.additionalHighlights?.join(", ") || "N/A"}
+**If isSatiricalOrFake = true OR bankingRelevance = "none":**
+- ALL category scores: 5-15 (max ${data.originalData.maxPossibleScore})
+- overallScore: max 15
+- recommendation: "not-recommended"
+- strengths: 1-2 generic items only
+- improvements: list why it's rejected
 
-=== EVALUEAZĂ PE 5 AXE (fiecare 0-100) ===
+**If bankingRelevance = "low" OR credibilityScore < 40:**
+- ALL category scores: 15-30 (max ${data.originalData.maxPossibleScore})
+- overallScore: max 30
+- recommendation: "not-recommended" or "needs-work"
 
-1. **innovation** (0-100): Cât de inovator este REAL?
-   - 90-100: Breakthrough technology, never seen before
-   - 70-89: Cutting-edge, significantly better than alternatives  
-   - 50-69: Modern approach, incremental improvement
-   - 30-49: Standard technology, nothing special
-   - 0-29: Outdated or copycat approach
+**If credibilityScore >= 60 AND bankingRelevance = "high":**
+- Score normally, but cap at maxPossibleScore
+- Be fair to legitimate submissions
 
-2. **feasibility** (0-100): Poate fi CONSTRUIT și LIVRAT?
-   - Evaluează: tech stack, echipă, stadiu, complexitate
-   - Punctează mai sus dacă există cod funcțional
+=== CATEGORY SCORES (0-100, capped at ${data.originalData.maxPossibleScore}) ===
 
-3. **businessValue** (0-100): Va GENERA VALOARE pentru Deutsche Bank?
-   - Evaluează: ROI, cost savings, revenue potential, strategic fit
-   - Include impact pe termen lung
+1. **innovation**: Based on tech analysis - ${data.technologies.innovationLevel}
+2. **feasibility**: Based on team and readiness - can they deliver?
+3. **businessValue**: Based on business context - real value for DB?
+4. **compliance**: Based on regulations analysis
+5. **readiness**: Based on implementation level
 
-4. **compliance** (0-100): Este SAFE din punct de vedere regulatory?
-   - 90-100: Fully compliant, low risk
-   - 70-89: Minor gaps, easily addressed
-   - 50-69: Significant work needed
-   - Below 50: Major compliance concerns
+=== OVERALL SCORE ===
+Weighted average, but CAPPED at ${data.originalData.maxPossibleScore}
 
-5. **readiness** (0-100): Cât de APROAPE e de producție?
-   - Bazează-te pe projectStage și implementationBadges
+=== STRENGTHS (1-5 items) ===
+- For fake/satirical submissions: just 1-2 generic items
+- For legitimate submissions: 3-5 specific strengths
 
-=== CALCULEAZĂ OVERALL SCORE ===
-overallScore = weighted average:
-- Innovation: 20%
-- Feasibility: 25%
-- Business Value: 25%
-- Compliance: 15%
-- Readiness: 15%
-
-=== IDENTIFICĂ 4-5 STRENGTHS ===
-Puncte forte CONCRETE și SPECIFICE, nu generice.
-NU: "Good technology"
-DA: "C-based architecture delivers 50x lower latency than Java alternatives"
-
-=== IDENTIFICĂ 3-4 IMPROVEMENTS ===
-Ce TREBUIE îmbunătățit pentru aprobare, concret și acționabil.
-NU: "Needs more work"
-DA: "Add comprehensive API documentation and OpenAPI spec for enterprise adoption"
+=== IMPROVEMENTS (1-4 items) ===
+- For fake submissions: explain why rejected
+- For legitimate: actionable improvements
 
 === RECOMMENDATION ===
-- "highly-recommended" (85+): Trebuie să investim ACUM
-- "recommended" (70-84): Solid, merită funding
-- "consider" (55-69): Potențial, dar necesită muncă
-- "needs-work" (<55): Nu e gata pentru investiție
+- "not-recommended": overallScore < 25 OR isSatiricalOrFake
+- "needs-work": overallScore 25-39
+- "consider": overallScore 40-59
+- "recommended": overallScore 60-79
+- "highly-recommended": overallScore 80+ (VERY RARE)
 
-=== SUMMARY TEXT (100-150 cuvinte) ===
-Scrie ca un VERDICT FINAL de investment committee:
-- Începe cu verdict clar: "RECOMMENDED FOR PILOT" sau "REQUIRES FURTHER DEVELOPMENT"
-- Menționează TOP 2 puncte forte
-- Menționează TOP 1-2 riscuri/lipsuri
-- Termină cu NEXT STEPS concreți
-- Fii DIRECT și DECISIV, nu diplomatic
+=== SUMMARY TEXT ===
+- If fake/satirical: Start with "NOT RECOMMENDED - SUBMISSION ISSUES DETECTED"
+- List the consistency issues found
+- Be direct about why it's rejected
 
-Exemplu: "RECOMMENDED FOR PILOT PROGRAM. This C-based API framework addresses a genuine pain point - the 50x latency improvement over Java alternatives is game-changing for real-time fraud detection. The working prototype with GitHub repo demonstrates execution capability. Key concerns: solo developer creates bus-factor risk; enterprise-grade observability stack needed before production. Recommended next steps: (1) Allocate 2 additional engineers from API Platform team, (2) Security audit by InfoSec within 30 days, (3) Pilot with Transaction Monitoring team Q1 2025."`,
+For legitimate ideas: Standard investment verdict.
+
+REMEMBER: Maximum score is ${data.originalData.maxPossibleScore}. Do not exceed it!`,
   });
 
   return object;

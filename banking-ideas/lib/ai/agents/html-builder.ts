@@ -6,18 +6,18 @@ export async function buildHTMLStructure(data: AggregatedData): Promise<HTMLBuil
   const { object } = await generateObject({
     model: anthropic("claude-3-haiku-20240307"),
     schema: HTMLBuilderOutputSchema,
-    prompt: `Tu ești un CONTENT STRATEGIST și UX WRITER pentru prezentări de produse tech.
+    prompt: `You are a CONTENT STRATEGIST and UX WRITER specializing in tech product presentations.
 
-Creează structura de conținut care va VINDE această idee către decision makers.
+Create a content structure that will SELL this idea to decision makers.
 
-=== DATE DISPONIBILE ===
+=== AVAILABLE DATA ===
 HEADLINE: ${data.basicInfo.headline}
 TAGLINE: ${data.basicInfo.tagline}
 PROBLEM: ${data.basicInfo.problemSummary}
-BENEFITS: ${data.basicInfo.keyBenefits?.join(", ") || "N/A"}
+BENEFITS: ${data.basicInfo.keyBenefits?.join(", ") || "Not specified"}
 TARGET: ${data.basicInfo.targetAudience}
 
-TECH STACK: ${data.technologies.primaryTech?.join(", ") || "N/A"}
+TECH STACK: ${data.technologies.primaryTech?.join(", ") || "Not specified"}
 TECH SUMMARY: ${data.technologies.techSummary}
 INNOVATION: ${data.technologies.innovationLevel}
 
@@ -27,44 +27,54 @@ MARKET: ${data.businessContext.marketOpportunity}
 VALUE: ${data.businessContext.businessValue}
 
 COMPLIANCE: ${data.regulations.complianceStatus}
-REGULATIONS: ${data.regulations.keyRegulations?.join(", ") || "N/A"}
+REGULATIONS: ${data.regulations.keyRegulations?.join(", ") || "Not specified"}
 
 USP: ${data.differentiators.uniqueSellingPoint}
 ADVANTAGE: ${data.differentiators.competitiveAdvantage}
 READINESS: ${data.differentiators.readinessLevel}
 
 TEAM: ${data.otherDetails.teamSize}
-SUPPORT NEEDED: ${data.otherDetails.supportNeeded?.join(", ") || "N/A"}
-HIGHLIGHTS: ${data.otherDetails.additionalHighlights?.join(", ") || "N/A"}
+SUPPORT NEEDED: ${data.otherDetails.supportNeeded?.join(", ") || "Not specified"}
+HIGHLIGHTS: ${data.otherDetails.additionalHighlights?.join(", ") || "Not specified"}
 
-=== CE TREBUIE SĂ CREEZI ===
+=== WHAT YOU NEED TO CREATE ===
 
-1. **pageTitle**: Un titlu de pagină CAPTIVANT și MEMORABIL
-   - Include beneficiul principal sau metrica cheie
-   - Exemplu: "HyperBank: 50x Faster APIs for Real-Time Banking"
+1. **pageTitle**: A CAPTIVATING and MEMORABLE page title
+   - Include the main benefit or key metric
+   - Example: "HyperBank: 50x Faster APIs for Real-Time Banking"
 
-2. **sections**: Array de secțiuni pentru prezentare (5-7 secțiuni)
-   Fiecare secțiune:
-   - id: identificator unic
+2. **sections**: Array of sections for the presentation (5-7 sections)
+   Each section needs:
+   - id: unique identifier (lowercase, hyphenated)
    - type: "hero" | "features" | "tech" | "business" | "social-proof" | "cta"
    - content: {
-       title: titlu de secțiune CATCHY
-       subtitle: 1-2 propoziții de context
-       items: array de bullet points (dacă e relevant)
-       badges: array de badge-uri scurte (dacă e relevant)
-       highlight: text evidențiat (dacă e relevant)
+       title: CATCHY section title
+       subtitle: 1-2 sentences of context (optional)
+       items: array of bullet points (if relevant)
+       badges: array of short badges (if relevant)
+       highlight: highlighted text (if relevant)
      }
 
-3. **callToAction**: Butoane de acțiune
-   - primary: acțiunea principală ("Schedule Demo", "View GitHub", "Request Pilot")
-   - secondary: acțiune secundară ("Download Whitepaper", "Contact Team")
+   Recommended structure:
+   - hero: Main pitch with headline and tagline
+   - features: Key benefits and value proposition
+   - tech: Technology stack and innovation
+   - business: Market opportunity and business value
+   - social-proof: Team, readiness, certifications
+   - cta: Call to action
 
-4. **metadata**: 
-   - category: categoria simplificată
-   - readinessLevel: din data.differentiators
-   - innovationLevel: din data.technologies
+3. **callToAction**: Action buttons
+   - primary: main action ("Schedule Demo", "View GitHub", "Request Pilot")
+   - secondary: secondary action ("Download Whitepaper", "Contact Team")
 
-IMPORTANT: Fiecare secțiune trebuie să VÂNDĂ ideea, nu doar să afișeze date!`,
+4. **metadata**:
+   - category: simplified category from data.basicInfo
+   - readinessLevel: from data.differentiators
+   - innovationLevel: from data.technologies
+
+IMPORTANT: Every section must SELL the idea, not just display data!
+
+ALL OUTPUT MUST BE IN ENGLISH.`,
   });
 
   return object;

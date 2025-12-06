@@ -74,6 +74,22 @@ export default function HomePage() {
   const [users, setUsers] = useState<User[]>([]);
   const [adminLoading, setAdminLoading] = useState(false);
 
+  // Comments state
+  interface Comment {
+    id: string;
+    ideaId: string;
+    userId: string;
+    content: string;
+    createdAt: string;
+    userName: string | null;
+    userEmail: string | null;
+  }
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [newComment, setNewComment] = useState("");
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+
   // Submit form state
   const [formData, setFormData] = useState({
     title: "",
@@ -223,6 +239,9 @@ export default function HomePage() {
 
   const closeModal = () => {
     setSelectedIdea(null);
+    setShowComments(false);
+    setComments([]);
+    setNewComment("");
   };
 
   const getStatusClass = (status: string) => {
@@ -377,6 +396,56 @@ export default function HomePage() {
     } catch (error) {
       console.error("Error voting:", error);
     }
+  };
+
+  // Comments handlers
+  const fetchComments = async (ideaId: string) => {
+    setCommentsLoading(true);
+    try {
+      const response = await fetch(`/api/comments?ideaId=${ideaId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setComments(data);
+      }
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+    }
+    setCommentsLoading(false);
+  };
+
+  const handleSubmitComment = async () => {
+    if (!newComment.trim() || !selectedIdea) return;
+    
+    setCommentSubmitting(true);
+    try {
+      const response = await fetch('/api/comments', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          ideaId: selectedIdea.id, 
+          content: newComment.trim() 
+        }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setComments(prev => [...prev, data]);
+        setNewComment("");
+      } else {
+        const error = await response.json();
+        alert(error.error || "Failed to post comment");
+      }
+    } catch (error) {
+      console.error("Error posting comment:", error);
+    }
+    setCommentSubmitting(false);
+  };
+
+  const toggleComments = () => {
+    if (!showComments && selectedIdea) {
+      fetchComments(selectedIdea.id);
+    }
+    setShowComments(!showComments);
   };
 
   // Form handlers
@@ -1516,9 +1585,12 @@ export default function HomePage() {
                 >
                   ⬡ GitHub Repository
                 </a>
-                {isLoggedIn && (
-                  <button className="submit-btn ai-btn">💬 COMMENT</button>
-                )}
+                <button 
+                  className="submit-btn ai-btn"
+                  onClick={toggleComments}
+                >
+                  💬 {showComments ? "HIDE" : "SHOW"} COMMENTS ({comments.length})
+                </button>
                 {isAdmin && (
                   <>
                     <select
@@ -1542,6 +1614,124 @@ export default function HomePage() {
                   </>
                 )}
               </div>
+
+              {/* Comments Section */}
+              {showComments && (
+                <div className="comments-section" style={{
+                  marginTop: "20px",
+                  padding: "15px",
+                  background: "rgba(0, 255, 255, 0.05)",
+                  border: "1px solid #00ffff",
+                  borderRadius: "4px"
+                }}>
+                  <h3 style={{ color: "#ffff00", marginBottom: "15px", fontSize: "18px" }}>
+                    💬 COMMENTS ({comments.length})
+                  </h3>
+                  
+                  {/* Comment Input - only for logged in users */}
+                  {isLoggedIn ? (
+                    <div style={{ marginBottom: "20px" }}>
+                      <textarea
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        placeholder="Write your comment here... (3-500 characters)"
+                        maxLength={500}
+                        style={{
+                          width: "100%",
+                          minHeight: "80px",
+                          padding: "10px",
+                          background: "#000033",
+                          border: "1px solid #00ffff",
+                          color: "#fff",
+                          fontFamily: "VT323, monospace",
+                          fontSize: "16px",
+                          borderRadius: "4px",
+                          resize: "vertical"
+                        }}
+                      />
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px" }}>
+                        <span style={{ color: "#888", fontSize: "12px" }}>
+                          {newComment.length}/500 characters
+                        </span>
+                        <button
+                          onClick={handleSubmitComment}
+                          disabled={commentSubmitting || newComment.trim().length < 3}
+                          className="submit-btn"
+                          style={{
+                            padding: "8px 20px",
+                            fontSize: "14px",
+                            opacity: (commentSubmitting || newComment.trim().length < 3) ? 0.5 : 1
+                          }}
+                        >
+                          {commentSubmitting ? "POSTING..." : "POST COMMENT"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ 
+                      marginBottom: "20px", 
+                      padding: "10px", 
+                      background: "rgba(255, 255, 0, 0.1)", 
+                      borderRadius: "4px",
+                      textAlign: "center"
+                    }}>
+                      <a 
+                        onClick={() => { closeModal(); setShowAuthModal(true); }}
+                        style={{ color: "#00ffff", cursor: "pointer", textDecoration: "underline" }}
+                      >
+                        Login
+                      </a> to post a comment
+                    </div>
+                  )}
+
+                  {/* Comments List */}
+                  {commentsLoading ? (
+                    <div style={{ textAlign: "center", color: "#888" }}>Loading comments...</div>
+                  ) : comments.length === 0 ? (
+                    <div style={{ textAlign: "center", color: "#888" }}>
+                      No comments yet. Be the first to share your thoughts!
+                    </div>
+                  ) : (
+                    <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+                      {comments.map((comment) => (
+                        <div 
+                          key={comment.id} 
+                          style={{
+                            padding: "12px",
+                            marginBottom: "10px",
+                            background: "rgba(0, 0, 0, 0.3)",
+                            borderLeft: "3px solid #00ffff",
+                            borderRadius: "0 4px 4px 0"
+                          }}
+                        >
+                          <div style={{ 
+                            display: "flex", 
+                            justifyContent: "space-between", 
+                            marginBottom: "8px",
+                            fontSize: "12px"
+                          }}>
+                            <span style={{ color: "#ffff00", fontWeight: "bold" }}>
+                              {comment.userName || "Anonymous"}
+                            </span>
+                            <span style={{ color: "#666" }}>
+                              {new Date(comment.createdAt).toLocaleDateString("en-GB", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit"
+                              })}
+                            </span>
+                          </div>
+                          <div style={{ color: "#fff", lineHeight: "1.5" }}>
+                            {comment.content}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

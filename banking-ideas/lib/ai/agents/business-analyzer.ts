@@ -6,51 +6,53 @@ export async function analyzeBusinessContext(data: ValidatedIdea): Promise<Busin
   const { object } = await generateObject({
     model: anthropic("claude-3-haiku-20240307"),
     schema: BusinessContextAnalysisSchema,
-    prompt: `Tu ești un BUSINESS STRATEGIST și INVESTMENT ANALYST specializat în fintech cu experiență la McKinsey și Goldman Sachs.
+    prompt: `You are a BUSINESS STRATEGIST and INVESTMENT ANALYST specialized in fintech, with experience at McKinsey and Goldman Sachs.
 
-Analizează potențialul de business al acestei idei și CREEAZĂ UN CASUS DE INVESTIȚIE convingător.
+Analyze the business potential of this idea and CREATE A COMPELLING INVESTMENT CASE.
 
-=== INPUT DE LA DEVELOPER ===
-Titlu: ${data.ideaTitle}
-Descriere: ${data.bigIdea}
-Target segment: ${data.targetSegment || "nespecificat"}
-Model monetizare: ${data.monetizationModel || "nespecificat"}
-Estimare piață: ${data.estimatedMarketSize || "nespecificat"}
-Competitori: ${data.marketResearch || "nespecificat"}
-Problema rezolvată: ${data.problemSolved}
+=== INPUT FROM DEVELOPER ===
+Title: ${data.ideaTitle}
+Description: ${data.bigIdea}
+Target segment: ${data.targetSegment || "Not specified"}
+Monetization model: ${data.monetizationModel || "Not specified"}
+Market size estimate: ${data.estimatedMarketSize || "Not specified"}
+Competitive landscape: ${data.marketResearch || "Not specified"}
+Problem solved: ${data.problemSolved}
 
-=== CE TREBUIE SĂ FACI ===
+=== YOUR TASKS ===
 
-1. **segment**: Definește CLAR segmentul de piață
-   - Nu "Banking" generic, ci specific: "Enterprise Transaction Processing", "Retail Banking Infrastructure"
-   - Include dimensiunea estimată dacă poți
+1. **segment**: Define the market segment CLEARLY
+   - Not generic "Banking", but specific: "Enterprise Transaction Processing", "Retail Banking Infrastructure", "SME Lending Operations"
+   - Include estimated size if possible
 
-2. **revenueModel**: Detaliază modelul de revenue (50-100 cuvinte)
-   - Dacă e "cost savings", CALCULEAZĂ economiile concrete
-   - Exemplu: "At 40% infrastructure cost reduction on a typical €5M annual server budget, this translates to €2M yearly savings. Payback period: 6 months."
-   - Dacă e SaaS, estimează pricing și TAM
-   - Adaugă și ALTE moduri de monetizare pe care le-ar putea explora
+2. **revenueModel**: Detail the revenue model (50-100 words)
+   - If "cost savings", CALCULATE concrete savings
+   - Example: "At 40% infrastructure cost reduction on a typical €5M annual server budget, this translates to €2M yearly savings. Payback period: 6 months."
+   - If SaaS, estimate pricing and TAM
+   - Add OTHER monetization paths they could explore
 
-3. **marketOpportunity**: VINDE oportunitatea! (100-150 cuvinte)
-   - Include CIFRE și TENDINȚE de piață
-   - Menționează timing-ul: de ce ACUM e momentul potrivit
-   - Compară cu exit-uri și evaluări din industrie
-   - Exemplu: "The global banking API market is projected to reach $25.4B by 2027 (CAGR 23.4%). With legacy modernization being a top-3 priority for 78% of bank CTOs, and the average bank spending €50M+ annually on infrastructure, even capturing 0.1% of this market represents a €25M+ opportunity."
+3. **marketOpportunity**: SELL the opportunity! (100-150 words)
+   - Include NUMBERS and MARKET TRENDS
+   - Mention timing: why NOW is the right moment
+   - Compare with industry exits and valuations
+   - Example: "The global banking API market is projected to reach $25.4B by 2027 (CAGR 23.4%). With legacy modernization being a top-3 priority for 78% of bank CTOs, and the average bank spending €50M+ annually on infrastructure, capturing even 0.1% of this market represents a €25M+ opportunity."
 
-4. **businessValue**: Articolează VALOAREA pentru Deutsche Bank specific (80-120 cuvinte)
-   - Ce probleme rezolvă PENTRU EI
-   - Cum se aliniază cu strategia lor (digitalizare, eficiență, inovație)
-   - Ce avantaj competitiv le oferă
-   - Include ROI estimat și timeline
+4. **businessValue**: Articulate the VALUE for Deutsche Bank specifically (80-120 words)
+   - What problems does it solve FOR THEM
+   - How does it align with their strategy (digitalization, efficiency, innovation)
+   - What competitive advantage does it provide
+   - Include estimated ROI and timeline
 
-5. **scalabilityScore**: Evaluează scalabilitatea pe o scară descriptivă
-   - "Massive" - poate scala global, platformă
-   - "High" - poate scala la nivel enterprise
-   - "Medium" - scalabil dar cu limitări
-   - "Limited" - soluție de nișă
-   - Justifică alegerea
+5. **scalabilityScore**: Evaluate scalability - USE EXACTLY ONE OF THESE VALUES (lowercase!):
+   - "massive" - Can scale globally, platform potential
+   - "high" - Can scale to enterprise level
+   - "medium" - Scalable but with limitations
+   - "limited" - Niche solution
+   - Justify your choice
 
-IMPORTANT: Fii un INVESTMENT BANKER care vinde un deal, nu un birocrat care completează formulare!`,
+IMPORTANT: Be an INVESTMENT BANKER selling a deal, not a bureaucrat filling forms!
+
+ALL OUTPUT MUST BE IN ENGLISH.`,
   });
 
   return object;

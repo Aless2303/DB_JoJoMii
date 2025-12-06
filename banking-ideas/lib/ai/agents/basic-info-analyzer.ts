@@ -6,45 +6,51 @@ export async function analyzeBasicInfo(data: ValidatedIdea): Promise<BasicInfoAn
   const { object } = await generateObject({
     model: anthropic("claude-3-haiku-20240307"),
     schema: BasicInfoAnalysisSchema,
-    prompt: `Tu ești un EXPERT în pitch-uri pentru investitori și un copywriter de top în fintech.
+    prompt: `You are a TOP FINTECH COPYWRITER and PITCH EXPERT who has helped secure $500M+ in funding.
 
-Ai primit o idee de la un developer. Rolul tău este să transformi această idee într-o PREZENTARE CAPTIVANTĂ care să convingă Deutsche Bank să investească.
+You've received an innovation idea from a developer. Your job is to transform it into a COMPELLING PRESENTATION that will convince Deutsche Bank to invest.
 
-=== IDEEA ORIGINALĂ ===
-Titlu: ${data.ideaTitle}
-Descriere: ${data.bigIdea}
-Categorie: ${data.mainCategory}
-Problema rezolvată: ${data.problemSolved}
-Tehnologii: ${data.coreTechnologies?.join(", ") || "N/A"}
-Target: ${data.targetSegment || "N/A"}
+=== ORIGINAL IDEA ===
+Title: ${data.ideaTitle}
+Description: ${data.bigIdea}
+Category: ${data.mainCategory}
+Problem Solved: ${data.problemSolved}
+Technologies: ${data.coreTechnologies?.join(", ") || "Not specified"}
+Target: ${data.targetSegment || "Not specified"}
 
-=== CE TREBUIE SĂ FACI ===
+=== YOUR TASKS ===
 
-1. **headline**: Creează un titlu CAPTIVANT și MEMORABIL (nu copia titlul original). 
-   - Folosește cuvinte puternice: "Revolutionary", "Next-Gen", "Game-Changing", "Ultra-Fast"
-   - Adaugă beneficiul principal: "10x Faster", "Zero Latency", "Bank-Grade Security"
-   - Exemplu: "HyperBank Engine: The 10x Faster API That Saves Millions"
+1. **headline**: Create a CAPTIVATING, MEMORABLE title (DO NOT copy the original title).
+   - Use power words: "Revolutionary", "Next-Gen", "Game-Changing", "Ultra-Fast", "Enterprise-Grade"
+   - Include the main benefit: "10x Faster", "Zero Latency", "Bank-Grade Security", "50% Cost Reduction"
+   - Format: "[Product Name]: [Key Benefit] for [Target]"
+   - Example: "HyperBank Engine: 10x Faster APIs That Save Millions"
 
-2. **tagline**: Un slogan de marketing PERCUTANT care vinde ideea în 10 cuvinte.
-   - Folosește tehnici de copywriting: rime, aliterații, contraste
-   - Exemplu: "Where Milliseconds Mean Millions" sau "Speed Meets Security"
+2. **tagline**: A PUNCHY marketing slogan that sells the idea in under 10 words.
+   - Use copywriting techniques: rhymes, alliteration, contrasts
+   - Examples: "Where Milliseconds Mean Millions" | "Speed Meets Security" | "Banking at the Speed of Thought"
 
-3. **category**: Categoria simplificată (1-2 cuvinte)
+3. **category**: Simplified category (1-2 words)
+   - Examples: "API Infrastructure", "Payments", "Security", "Data Analytics"
 
-4. **problemSummary**: Rescrie problema ca pe o CRIZĂ URGENTĂ pe care banca trebuie să o rezolve ACUM.
-   - Adaugă cifre și statistici (poți estima dacă nu sunt date)
-   - Folosește limbaj urgent: "costs banks millions", "legacy systems failing", "critical bottleneck"
-   - Fă cititorul să simtă DUREREA problemei
+4. **problemSummary**: Rewrite the problem as an URGENT CRISIS that the bank must solve NOW.
+   - Add numbers and statistics (you can estimate if not provided)
+   - Use urgent language: "costs banks millions", "legacy systems failing", "critical bottleneck"
+   - Make the reader FEEL the pain of the problem
+   - 2-3 sentences maximum
 
-5. **keyBenefits**: Generează 5 beneficii CONCRETE și CUANTIFICABILE (nu generice!)
-   - NU: "Fast", "Secure", "Efficient" 
-   - DA: "Sub-millisecond response times", "40% infrastructure cost reduction", "Zero-downtime deployments"
-   - Fiecare beneficiu trebuie să aibă un NUMĂR sau o METRICĂ dacă e posibil
+5. **keyBenefits**: Generate 5 CONCRETE, QUANTIFIABLE benefits (NOT generic!)
+   - BAD: "Fast", "Secure", "Efficient", "Scalable"
+   - GOOD: "Sub-millisecond response times (50x faster than Java)", "40% infrastructure cost reduction", "Zero-downtime deployments", "99.99% uptime SLA"
+   - Each benefit MUST have a NUMBER or METRIC when possible
 
-6. **targetAudience**: Descrie EXACT cine va folosi și cine va CUMPĂRA/APROBA produsul.
-   - Include decision makers: "CTOs of mid-size banks", "Infrastructure teams at Deutsche Bank"
+6. **targetAudience**: Describe EXACTLY who will USE and who will BUY/APPROVE this product.
+   - Include decision makers: "CTOs of mid-size European banks", "Infrastructure teams at Deutsche Bank"
+   - Be specific about role and organization type
 
-IMPORTANT: NU face copy-paste din input. TRANSFORMĂ și ÎMBUNĂTĂȚEȘTE totul!`,
+IMPORTANT: DO NOT copy-paste from input. TRANSFORM and IMPROVE everything!
+
+ALL OUTPUT MUST BE IN ENGLISH.`,
   });
 
   return object;

@@ -74,11 +74,31 @@ export async function runAIPipeline(
     });
 
     log("Step 5: Calculating statistics and scores...");
-    const statistics = await calculateStatistics(aggregatedData, htmlStructure);
-    log("Statistics complete", {
-      overallScore: statistics.overallScore,
-      recommendation: statistics.recommendation
-    });
+    let statistics;
+    try {
+      statistics = await calculateStatistics(aggregatedData, htmlStructure);
+      log("Statistics complete", {
+        overallScore: statistics.overallScore,
+        recommendation: statistics.recommendation
+      });
+    } catch (statsError) {
+      // If statistics fail, provide fallback values
+      console.error("[PIPELINE] Statistics calculation failed, using fallback:", statsError);
+      statistics = {
+        overallScore: 50,
+        categoryScores: {
+          innovation: 50,
+          feasibility: 50,
+          businessValue: 50,
+          compliance: 50,
+          readiness: 50,
+        },
+        strengths: ["Analysis pending - please try again"],
+        improvements: ["Unable to complete full analysis"],
+        recommendation: "consider" as const,
+        summaryText: "The automated evaluation encountered an issue. Please review the idea details manually or try submitting again.",
+      };
+    }
 
     log("Step 6: Designing Teletext visual output...");
     const visualOutput = designVisualOutput(
@@ -88,8 +108,6 @@ export async function runAIPipeline(
       rawInput.ideaTitle || "Untitled Idea"
     );
     log("Visual design complete", { pages: visualOutput.pages.length });
-
-    // HTML-ul e generat direct de AI în visualOutput.htmlOutput
 
     log("Pipeline complete!");
 

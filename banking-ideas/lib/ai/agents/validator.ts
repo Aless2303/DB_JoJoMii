@@ -6,37 +6,65 @@ export async function validateAndNormalizeInput(rawInput: RawIdeaInput): Promise
   const { object } = await generateObject({
     model: anthropic("claude-3-haiku-20240307"),
     schema: ValidatedIdeaSchema,
-    prompt: `Tu ești un DATA ANALYST care pregătește date pentru analiză AI.
+    prompt: `You are a FRAUD DETECTOR at Deutsche Bank. Validate this submission and calculate credibility.
 
-Validează, normalizează și ÎMBOGĂȚEȘTE aceste date brute de la un developer.
-
-=== DATE BRUTE PRIMITE ===
+=== RAW DATA ===
 ${JSON.stringify(rawInput, null, 2)}
 
-=== CE TREBUIE SĂ FACI ===
+=== QUICK CHECKS ===
 
-1. **PĂSTREAZĂ** toate datele valoroase furnizate de developer
+1. **BANKING RELEVANCE**: Is this about banking/finance?
+   - Banking APIs, payments, fraud, compliance = "high"
+   - Tangentially related = "medium" or "low"  
+   - Tennis, sports, entertainment = "none"
 
-2. **COMPLETEAZĂ** câmpurile lipsă cu valori INTELIGENTE:
-   - NU pune "N/A" sau "Not specified"
-   - DEDUCE din context ce ar putea fi
-   - Exemplu: dacă e un API framework, targetSegment probabil e "Internal - Bank Employees" sau "B2B - Other Financial Institutions"
+2. **CONSISTENCY CHECK**: Do claims match reality?
+   - "0 developers" + "Working Prototype" = FAKE
+   - AI/ML/Blockchain checked for non-tech idea = FAKE
+   - "47 people market" = JOKE
 
-3. **NORMALIZEAZĂ** valorile:
-   - coreTechnologies: extrage din techStackDetails dacă nu sunt explicit menționate
-   - applicableRegulations: adaugă regulamente standard pentru banking (GDPR, PSD2) dacă lipsesc
-   - implementationLevel: deduce din projectStage ce componente sunt gata
+3. **TONE**: Is it sarcastic? ("with your foot", "1 dreamer") = SATIRICAL
 
-4. **ÎMBUNĂTĂȚEȘTE** descrierile scurte:
-   - Dacă bigIdea e prea scurt, expandează-l bazat pe context
-   - Dacă problemSolved e vag, fă-l mai specific pentru banking
+=== CALCULATE SCORES ===
 
-5. **VALIDEAZĂ** format:
-   - coreTechnologies, applicableRegulations, implementationLevel = arrays
-   - githubLink, demoVideo = strings or null
-   - toate celelalte = strings (non-empty)
+**credibilityScore** (0-100): Start at 100, deduct:
+- Not about banking: -40
+- Satirical/joke: -50
+- Tech claims don't match: -20
+- Team can't deliver: -25
+- Absurd market: -15
 
-IMPORTANT: Scopul este să ai DATE COMPLETE și UTILE pentru agenții următori. Nu lăsa câmpuri goale!`,
+**maxPossibleScore**: Based on credibility:
+- credibility >= 80 → max = 100
+- credibility 60-79 → max = 70
+- credibility 40-59 → max = 50
+- credibility 20-39 → max = 30
+- credibility < 20 → max = 15
+
+=== REQUIRED OUTPUT FIELDS ===
+
+You MUST include these 5 fields in your response:
+1. **credibilityScore**: number 0-100
+2. **bankingRelevance**: "high" | "medium" | "low" | "none"
+3. **consistencyIssues**: array of strings (empty [] if none)
+4. **isSatiricalOrFake**: true or false
+5. **maxPossibleScore**: number 0-100
+
+Plus all the normalized data fields.
+
+EXAMPLE FOR SATIRICAL SUBMISSION:
+- credibilityScore: 10
+- bankingRelevance: "none"
+- consistencyIssues: ["Not about banking", "Satirical tone", "Fake team claims"]
+- isSatiricalOrFake: true
+- maxPossibleScore: 15
+
+EXAMPLE FOR LEGITIMATE SUBMISSION:
+- credibilityScore: 85
+- bankingRelevance: "high"
+- consistencyIssues: []
+- isSatiricalOrFake: false
+- maxPossibleScore: 100`,
   });
 
   return object;

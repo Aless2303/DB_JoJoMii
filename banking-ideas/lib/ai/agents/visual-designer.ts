@@ -6,16 +6,16 @@ import {
 } from "../schemas";
 
 /**
- * VISUAL DESIGNER - Generează HTML pentru popup
- * NU folosește AI - construiește HTML determinist din date
+ * VISUAL DESIGNER - Generates HTML for popup display
+ * Does NOT use AI - builds deterministic HTML from data
  * 
- * ȘABLON TELETEXT - OPTIMIZAT PENTRU LIZIBILITATE MAXIMĂ:
+ * TELETEXT TEMPLATE - OPTIMIZED FOR MAXIMUM READABILITY:
  * - Font: VT323, monospace
- * - Background: #0000AA (albastru închis teletext)
- * - Culori: Cyan (#00FFFF), Yellow (#FFFF00), Magenta (#FF00FF), Green (#00FF00), White (#FFFFFF)
- * - Font sizes MARI (20-28px pentru text, 40px+ pentru titluri)
- * - Line-height generos (1.8-2.0)
- * - Spacing amplu între secțiuni (40px+)
+ * - Background: #0000AA (dark teletext blue)
+ * - Colors: Cyan (#00FFFF), Yellow (#FFFF00), Magenta (#FF00FF), Green (#00FF00), White (#FFFFFF)
+ * - Large font sizes (20-28px for text, 40px+ for titles)
+ * - Generous line-height (1.8-2.0)
+ * - Ample spacing between sections (40px+)
  */
 export function designVisualOutput(
   data: AggregatedData,
@@ -98,22 +98,12 @@ export function designVisualOutput(
 
   <!-- TECHNOLOGIES -->
   ${makeSectionTitle("TECHNOLOGY STACK")}
-  <div style="padding:20px 24px;line-height:2.8;">
-    ${(data.technologies.primaryTech || []).map(t => makeBadge(t, "#00FFFF")).join(" ")}
-  </div>
-  
-  <div style="color:#FFFFFF;font-size:22px;line-height:2;padding:20px 24px;margin-top:16px;">
-    ${data.technologies.techSummary || "Technology details not provided"}
-  </div>
-
-  <div style="display:flex;gap:30px;margin:40px 24px;flex-wrap:wrap;">
-    <div style="flex:1;min-width:200px;background:rgba(0,0,0,0.3);padding:24px;border-radius:8px;text-align:center;">
-      <div style="color:#AAA;font-size:16px;margin-bottom:12px;letter-spacing:2px;">INNOVATION</div>
-      <div style="color:#FF00FF;font-size:28px;font-weight:bold;">${(data.technologies.innovationLevel || "MODERATE").toUpperCase()}</div>
+  <div style="padding:0 24px;">
+    <div style="display:flex;flex-wrap:wrap;gap:12px;margin:20px 0;">
+      ${(data.technologies.primaryTech || []).map(tech => makeBadge(tech, "#00FF00", "rgba(0,255,0,0.1)")).join("")}
     </div>
-    <div style="flex:1;min-width:200px;background:rgba(0,0,0,0.3);padding:24px;border-radius:8px;text-align:center;">
-      <div style="color:#AAA;font-size:16px;margin-bottom:12px;letter-spacing:2px;">READINESS</div>
-      <div style="color:#00FFFF;font-size:28px;font-weight:bold;">${(data.differentiators.readinessLevel || "PROTOTYPE").toUpperCase()}</div>
+    <div style="color:#FFFFFF;font-size:22px;line-height:2;margin-top:20px;">
+      ${data.technologies.techSummary || "Technology analysis pending"}
     </div>
   </div>
 
@@ -122,15 +112,27 @@ export function designVisualOutput(
   <!-- BUSINESS CONTEXT -->
   ${makeSectionTitle("BUSINESS CONTEXT")}
   <div style="padding:0 24px;">
-    ${makeInfoRow("Segment", data.businessContext.segment || "Banking")}
-    ${makeInfoRow("Revenue Model", data.businessContext.revenueModel || "To be defined")}
-    ${makeInfoRow("Target Audience", data.basicInfo.targetAudience || "Financial institutions")}
-    ${makeInfoRow("Market Opportunity", data.businessContext.marketOpportunity || "Growing market", "#00FF00")}
-    ${makeInfoRow("Business Value", data.businessContext.businessValue || "High potential")}
-    ${makeInfoRow("Scalability", data.businessContext.scalabilityScore || "Medium", "#FFFF00")}
+    ${makeInfoRow("Market Segment", data.businessContext.segment || "Not specified")}
+    ${makeInfoRow("Revenue Model", data.businessContext.revenueModel || "Not specified")}
+    ${makeInfoRow("Scalability", (data.businessContext.scalabilityScore || "Unknown").toUpperCase(), "#00FFFF")}
+    
+    <div style="margin:30px 0;">
+      <div style="color:#AAA;font-size:20px;margin-bottom:12px;letter-spacing:2px;">MARKET OPPORTUNITY:</div>
+      <div style="color:#FFFFFF;font-size:22px;line-height:2;">${data.businessContext.marketOpportunity || "Market analysis pending"}</div>
+    </div>
+    
+    <div style="margin:30px 0;">
+      <div style="color:#AAA;font-size:20px;margin-bottom:12px;letter-spacing:2px;">VALUE FOR DEUTSCHE BANK:</div>
+      <div style="color:#FFFF00;font-size:22px;line-height:2;">${data.businessContext.businessValue || "Business value analysis pending"}</div>
+    </div>
   </div>
 
-  <div style="margin:30px 24px;">
+  ${makeSeparator()}
+
+  <!-- STATUS BADGES -->
+  <div style="text-align:center;padding:30px;">
+    ${makeBadge(`${(data.technologies.innovationLevel || "Modern").toUpperCase()} TECHNOLOGY`, "#FF00FF", "rgba(255,0,255,0.1)")}
+    ${makeBadge(`${(data.differentiators.readinessLevel || "Concept").toUpperCase().replace(/-/g, " ")}`, "#FFFF00", "rgba(255,255,0,0.1)")}
     ${data.differentiators.githubAvailable ? makeBadge("GITHUB AVAILABLE", "#00FF00", "rgba(0,255,0,0.1)") : ""}
     ${data.otherDetails.hasDemo ? makeBadge("DEMO READY", "#00FFFF", "rgba(0,255,255,0.1)") : ""}
     ${data.differentiators.competitiveAdvantage ? makeBadge("COMPETITIVE EDGE", "#FF00FF", "rgba(255,0,255,0.1)") : ""}
@@ -182,7 +184,7 @@ export function designVisualOutput(
   <div style="padding:0 24px;">
     <div style="display:flex;align-items:center;gap:24px;margin:20px 0;flex-wrap:wrap;">
       ${makeBadge(
-        (data.regulations.complianceStatus || "PENDING").toUpperCase(),
+        (data.regulations.complianceStatus || "PENDING").toUpperCase().replace(/-/g, " "),
         data.regulations.complianceStatus === "compliant" ? "#00FF00" : 
         data.regulations.complianceStatus === "partial" ? "#FFFF00" : "#FF6600"
       )}
