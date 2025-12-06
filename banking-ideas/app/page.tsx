@@ -1,52 +1,97 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession, signIn, signOut } from "next-auth/react";
 
-// Type for an idea
+// Types
 interface Idea {
-  id: number;
+  id: string;
   title: string;
-  description: string;
+  shortDescription: string;
   status: string;
-  votes: number;
-  author: string;
-  date: string;
-  github: string;
+  likes: number;
+  dislikes: number;
+  userId: string;
+  githubLink: string;
+  createdAt: string;
+  userName?: string;
 }
 
-// Type for statistics
 interface Stats {
   totalIdeas: number;
+  new: number;
   inReview: number;
   approved: number;
   building: number;
+  completed: number;
 }
 
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  createdAt: string;
+}
+
+type AuthMode = "login" | "register";
+
 export default function HomePage() {
+  const { data: session, status: sessionStatus } = useSession();
   const [activeTab, setActiveTab] = useState("browse");
   const [currentPage, setCurrentPage] = useState("P100");
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
   const [dateTime, setDateTime] = useState("");
   
-  // State for database data (initially empty)
+  // Auth modal state
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthMode>("login");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authName, setAuthName] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  
+  // Data state
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [stats, setStats] = useState<Stats>({
     totalIdeas: 0,
+    new: 0,
     inReview: 0,
     approved: 0,
     building: 0,
+    completed: 0,
   });
   const [loading, setLoading] = useState(true);
+  
+  // Admin state
+  const [users, setUsers] = useState<User[]>([]);
+  const [adminLoading, setAdminLoading] = useState(false);
 
-  // TODO: Fetch ideas from database
+  // User role helper
+  const userRole = session?.user?.role || "guest";
+  const isLoggedIn = !!session?.user;
+  const isAdmin = userRole === "admin";
+
+  // Fetch ideas
   useEffect(() => {
     const fetchIdeas = async () => {
       try {
-        // TODO: Replace with actual API call
-        // const response = await fetch('/api/ideas');
-        // const data = await response.json();
-        // setIdeas(data.ideas);
-        // setStats(data.stats);
+        const response = await fetch('/api/ideas');
+        if (response.ok) {
+          const data = await response.json();
+          setIdeas(data.ideas || []);
+          // Calculate stats
+          const ideasList = data.ideas || [];
+          setStats({
+            totalIdeas: ideasList.length,
+            new: ideasList.filter((i: Idea) => i.status === "new").length,
+            inReview: ideasList.filter((i: Idea) => i.status === "review").length,
+            approved: ideasList.filter((i: Idea) => i.status === "approved").length,
+            building: ideasList.filter((i: Idea) => i.status === "build").length,
+            completed: ideasList.filter((i: Idea) => i.status === "completed").length,
+          });
+        }
         setLoading(false);
       } catch (error) {
         console.error("Error fetching ideas:", error);
@@ -55,6 +100,27 @@ export default function HomePage() {
     };
     fetchIdeas();
   }, []);
+
+  // Fetch users for admin
+  useEffect(() => {
+    if (isAdmin && activeTab === "admin") {
+      fetchUsers();
+    }
+  }, [isAdmin, activeTab]);
+
+  const fetchUsers = async () => {
+    setAdminLoading(true);
+    try {
+      const response = await fetch('/api/admin/users');
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data.users || []);
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+    setAdminLoading(false);
+  };
 
   // Update datetime
   useEffect(() => {
@@ -79,32 +145,40 @@ export default function HomePage() {
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Close modal on Escape
-      if (e.key === "Escape" && selectedIdea) {
-        setSelectedIdea(null);
+      if (e.key === "Escape") {
+        if (selectedIdea) setSelectedIdea(null);
+        if (showAuthModal) setShowAuthModal(false);
         return;
       }
       
       const key = e.key;
-      if (key >= "1" && key <= "4" && !selectedIdea) {
-        const tabs = ["browse", "submit", "top", "about"];
+      if (key >= "1" && key <= "5" && !selectedIdea && !showAuthModal) {
+        const tabs = ["browse", "submit", "top", "about", "admin"];
         const tabIndex = parseInt(key) - 1;
-        if (tabs[tabIndex]) {
+        if (tabs[tabIndex] && (tabIndex !== 4 || isAdmin)) {
           showTab(tabs[tabIndex]);
         }
       }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [selectedIdea]);
+  }, [selectedIdea, showAuthModal, isAdmin]);
 
   const showTab = (tabName: string) => {
+    if (tabName === "submit" && !isLoggedIn) {
+      setShowAuthModal(true);
+      return;
+    }
+    if (tabName === "admin" && !isAdmin) {
+      return;
+    }
     setActiveTab(tabName);
     const pageMap: Record<string, string> = {
       browse: "P100",
       submit: "P200",
       top: "P300",
       about: "P900",
+      admin: "P999",
     };
     setCurrentPage(pageMap[tabName] || "P100");
   };
@@ -122,7 +196,8 @@ export default function HomePage() {
       new: "status-new",
       review: "status-review",
       approved: "status-approved",
-      building: "status-building",
+      build: "status-building",
+      completed: "status-completed",
     };
     return statusMap[status] || "status-new";
   };
@@ -132,9 +207,142 @@ export default function HomePage() {
       new: "NEW",
       review: "REVIEW",
       approved: "APPROVED",
-      building: "BUILD",
+      build: "BUILD",
+      completed: "COMPLETED",
     };
     return labelMap[status] || "NEW";
+  };
+
+  // Auth handlers
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError("");
+    setAuthLoading(true);
+
+    try {
+      const result = await signIn("credentials", {
+        redirect: false,
+        email: authEmail,
+        password: authPassword,
+        action: authMode,
+        name: authName,
+      });
+
+      if (result?.error) {
+        setAuthError(result.error);
+      } else {
+        setShowAuthModal(false);
+        setAuthEmail("");
+        setAuthPassword("");
+        setAuthName("");
+      }
+    } catch (error) {
+      setAuthError("An error occurred. Please try again.");
+    }
+    setAuthLoading(false);
+  };
+
+  const handleLogout = () => {
+    signOut({ redirect: false });
+  };
+
+  // Admin handlers
+  const handleUpdateUserRole = async (userId: string, newRole: string) => {
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      });
+      if (response.ok) {
+        fetchUsers();
+      }
+    } catch (error) {
+      console.error("Error updating user:", error);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm("Are you sure you want to delete this user?")) return;
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        fetchUsers();
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+    }
+  };
+
+  const handleUpdateIdeaStatus = async (ideaId: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/admin/ideas/${ideaId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (response.ok) {
+        // Refresh ideas
+        const ideasResponse = await fetch('/api/ideas');
+        if (ideasResponse.ok) {
+          const data = await ideasResponse.json();
+          setIdeas(data.ideas || []);
+        }
+      }
+    } catch (error) {
+      console.error("Error updating idea:", error);
+    }
+  };
+
+  const handleDeleteIdea = async (ideaId: string) => {
+    if (!confirm("Are you sure you want to delete this idea?")) return;
+    try {
+      const response = await fetch(`/api/admin/ideas/${ideaId}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        setSelectedIdea(null);
+        // Refresh ideas
+        const ideasResponse = await fetch('/api/ideas');
+        if (ideasResponse.ok) {
+          const data = await ideasResponse.json();
+          setIdeas(data.ideas || []);
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting idea:", error);
+    }
+  };
+
+  // Vote handler
+  const handleVote = async (ideaId: string, voteType: "like" | "dislike") => {
+    if (!isLoggedIn) {
+      setShowAuthModal(true);
+      return;
+    }
+    try {
+      const response = await fetch('/api/vote', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ideaId, voteType }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        // Update idea in state
+        setIdeas(prev => prev.map(idea => 
+          idea.id === ideaId 
+            ? { ...idea, likes: data.likes, dislikes: data.dislikes }
+            : idea
+        ));
+        if (selectedIdea?.id === ideaId) {
+          setSelectedIdea(prev => prev ? { ...prev, likes: data.likes, dislikes: data.dislikes } : null);
+        }
+      }
+    } catch (error) {
+      console.error("Error voting:", error);
+    }
   };
 
   const generateMockup = () => {
@@ -158,7 +366,7 @@ export default function HomePage() {
   };
 
   // Sort ideas by votes for top tab
-  const topIdeas = [...ideas].sort((a, b) => b.votes - a.votes).slice(0, 5);
+  const topIdeas = [...ideas].sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes)).slice(0, 5);
 
   return (
     <>
@@ -166,6 +374,28 @@ export default function HomePage() {
         {/* Header */}
         <div className="header">
           <span className="header-left">◆ {currentPage}</span>
+          <div className="auth-buttons">
+            {sessionStatus === "loading" ? (
+              <span style={{ color: "var(--teletext-cyan)" }}>Loading...</span>
+            ) : isLoggedIn ? (
+              <div className="user-info">
+                <span>◆ {session.user.name}</span>
+                <span className={`user-role ${userRole}`}>{userRole.toUpperCase()}</span>
+                <button className="auth-btn logout" onClick={handleLogout}>
+                  LOGOUT
+                </button>
+              </div>
+            ) : (
+              <>
+                <button className="auth-btn login" onClick={() => { setAuthMode("login"); setShowAuthModal(true); }}>
+                  ► LOGIN
+                </button>
+                <button className="auth-btn register" onClick={() => { setAuthMode("register"); setShowAuthModal(true); }}>
+                  ✎ REGISTER
+                </button>
+              </>
+            )}
+          </div>
           <span className="header-right">{dateTime}</span>
         </div>
 
@@ -194,8 +424,9 @@ export default function HomePage() {
           <button
             className={`nav-item ${activeTab === "submit" ? "active" : ""}`}
             onClick={() => showTab("submit")}
+            title={!isLoggedIn ? "Login required to submit ideas" : ""}
           >
-            <span className="nav-label">SUBMIT IDEA</span>
+            <span className="nav-label">SUBMIT IDEA {!isLoggedIn && "🔒"}</span>
             <span className="nav-page">200</span>
           </button>
           <button
@@ -212,6 +443,16 @@ export default function HomePage() {
             <span className="nav-label">ABOUT</span>
             <span className="nav-page">900</span>
           </button>
+          {isAdmin && (
+            <button
+              className={`nav-item ${activeTab === "admin" ? "active" : ""}`}
+              onClick={() => showTab("admin")}
+              style={{ borderColor: "var(--teletext-magenta)" }}
+            >
+              <span className="nav-label" style={{ color: "var(--teletext-magenta)" }}>★ ADMIN</span>
+              <span className="nav-page">999</span>
+            </button>
+          )}
         </div>
 
         {/* Stats Bar */}
@@ -219,6 +460,10 @@ export default function HomePage() {
           <div className="stat-item">
             <span className="stat-value">{stats.totalIdeas}</span>
             <span className="stat-label">TOTAL IDEAS</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-value">{stats.new}</span>
+            <span className="stat-label">NEW</span>
           </div>
           <div className="stat-item">
             <span className="stat-value">{stats.inReview}</span>
@@ -230,7 +475,11 @@ export default function HomePage() {
           </div>
           <div className="stat-item">
             <span className="stat-value">{stats.building}</span>
-            <span className="stat-label">IN DEVELOPMENT</span>
+            <span className="stat-label">BUILDING</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-value">{stats.completed}</span>
+            <span className="stat-label">COMPLETED</span>
           </div>
         </div>
 
@@ -259,13 +508,15 @@ export default function HomePage() {
                   className="idea-item"
                   onClick={() => openIdeaModal(idea)}
                 >
-                  <span className="idea-id">#{idea.id}</span>
+                  <span className="idea-id">#{idea.id.slice(0, 6)}</span>
                   <span className="idea-title">{idea.title}</span>
                   <span className={`idea-status ${getStatusClass(idea.status)}`}>
                     {getStatusLabel(idea.status)}
                   </span>
                   <span className="idea-votes">
-                    ▲ <span className="vote-count">{idea.votes}</span>
+                    <span style={{ color: "var(--teletext-green)" }}>▲{idea.likes}</span>
+                    {" / "}
+                    <span style={{ color: "var(--teletext-red)" }}>▼{idea.dislikes}</span>
                   </span>
                 </div>
               ))
@@ -278,344 +529,354 @@ export default function HomePage() {
           <div className="content-section submit-section">
             <span className="section-title section-title-alt">✎ SUBMIT NEW IDEA</span>
 
-            <form style={{ marginTop: "15px" }}>
-              {/* SECTION 1: Basic Information */}
-              <div className="form-section">
-                <div className="form-section-header">
-                  <span className="section-number">1</span>
-                  <span className="section-name">BASIC INFORMATION</span>
-                </div>
-                
-                <div className="form-row">
-                  <label className="form-label">IDEA TITLE *</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g., SmartSave - AI-Powered Savings Assistant for Gen Z"
-                  />
-                </div>
-
-                <div className="form-row">
-                  <label className="form-label">THE BIG IDEA *</label>
-                  <textarea
-                    className="form-input form-textarea"
-                    placeholder="e.g., An intelligent savings app that analyzes spending patterns and automatically transfers small amounts to savings goals. Uses gamification and social features to make saving money engaging for younger demographics."
-                  ></textarea>
-                </div>
-
-                <div className="form-row">
-                  <label className="form-label">MAIN CATEGORY *</label>
-                  <select className="form-input">
-                    <option value="">-- Select Category --</option>
-                    <option>Digital Banking</option>
-                    <option>Payments & Transfers</option>
-                    <option>Wealth Management</option>
-                    <option>Lending & Credit</option>
-                    <option>Insurance</option>
-                    <option>Fraud & Security</option>
-                    <option>Customer Experience</option>
-                    <option>Internal Operations</option>
-                    <option>ESG & Sustainability</option>
-                    <option>Other</option>
-                  </select>
-                </div>
-
-                <div className="form-row">
-                  <label className="form-label">PROBLEM IT SOLVES *</label>
-                  <textarea
-                    className="form-input form-textarea"
-                    placeholder="e.g., Young adults struggle to build savings habits due to lack of engagement with traditional banking tools. 67% of Gen Z report having no emergency fund, and traditional savings accounts feel disconnected from their digital lifestyle."
-                  ></textarea>
-                </div>
+            {!isLoggedIn ? (
+              <div className="guest-message">
+                <p>🔒 You must be logged in to submit ideas.</p>
+                <p>
+                  <a onClick={() => { setAuthMode("login"); setShowAuthModal(true); }}>Login</a> or{" "}
+                  <a onClick={() => { setAuthMode("register"); setShowAuthModal(true); }}>Register</a> to continue.
+                </p>
               </div>
+            ) : (
+              <form style={{ marginTop: "15px" }}>
+                {/* SECTION 1: Basic Information */}
+                <div className="form-section">
+                  <div className="form-section-header">
+                    <span className="section-number">1</span>
+                    <span className="section-name">BASIC INFORMATION</span>
+                  </div>
+                  
+                  <div className="form-row">
+                    <label className="form-label">IDEA TITLE *</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g., SmartSave - AI-Powered Savings Assistant for Gen Z"
+                    />
+                  </div>
 
-              {/* SECTION 2: Preferred Technologies */}
-              <div className="form-section">
-                <div className="form-section-header">
-                  <span className="section-number">2</span>
-                  <span className="section-name">PREFERRED TECHNOLOGIES</span>
-                </div>
+                  <div className="form-row">
+                    <label className="form-label">THE BIG IDEA *</label>
+                    <textarea
+                      className="form-input form-textarea"
+                      placeholder="e.g., An intelligent savings app that analyzes spending patterns and automatically transfers small amounts to savings goals. Uses gamification and social features to make saving money engaging for younger demographics."
+                    ></textarea>
+                  </div>
 
-                <div className="form-row">
-                  <label className="form-label">CORE TECHNOLOGIES (select all that apply)</label>
-                  <div className="checkbox-group">
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> Artificial Intelligence / ML
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> Blockchain / DLT
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> Cloud Computing
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> Big Data / Analytics
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> IoT / Embedded Systems
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> API / Open Banking
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> Biometrics
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> AR / VR
-                    </label>
+                  <div className="form-row">
+                    <label className="form-label">MAIN CATEGORY *</label>
+                    <select className="form-input">
+                      <option value="">-- Select Category --</option>
+                      <option>Digital Banking</option>
+                      <option>Payments & Transfers</option>
+                      <option>Wealth Management</option>
+                      <option>Lending & Credit</option>
+                      <option>Insurance</option>
+                      <option>Fraud & Security</option>
+                      <option>Customer Experience</option>
+                      <option>Internal Operations</option>
+                      <option>ESG & Sustainability</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+
+                  <div className="form-row">
+                    <label className="form-label">PROBLEM IT SOLVES *</label>
+                    <textarea
+                      className="form-input form-textarea"
+                      placeholder="e.g., Young adults struggle to build savings habits due to lack of engagement with traditional banking tools. 67% of Gen Z report having no emergency fund, and traditional savings accounts feel disconnected from their digital lifestyle."
+                    ></textarea>
                   </div>
                 </div>
 
-                <div className="form-row">
-                  <label className="form-label">SOLUTION TYPE *</label>
-                  <select className="form-input">
-                    <option value="">-- Select Solution Type --</option>
-                    <option>Mobile App (iOS/Android)</option>
-                    <option>Web Application</option>
-                    <option>Desktop Application</option>
-                    <option>API / Backend Service</option>
-                    <option>Browser Extension</option>
-                    <option>Chatbot / Conversational AI</option>
-                    <option>Hardware + Software</option>
-                    <option>Platform / Marketplace</option>
-                  </select>
-                </div>
+                {/* SECTION 2: Preferred Technologies */}
+                <div className="form-section">
+                  <div className="form-section-header">
+                    <span className="section-number">2</span>
+                    <span className="section-name">PREFERRED TECHNOLOGIES</span>
+                  </div>
 
-                <div className="form-row">
-                  <label className="form-label">TECH STACK DETAILS (optional)</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g., React Native, Node.js, PostgreSQL, TensorFlow, AWS Lambda"
-                  />
-                </div>
-              </div>
+                  <div className="form-row">
+                    <label className="form-label">CORE TECHNOLOGIES (select all that apply)</label>
+                    <div className="checkbox-group">
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> Artificial Intelligence / ML
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> Blockchain / DLT
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> Cloud Computing
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> Big Data / Analytics
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> IoT / Embedded Systems
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> API / Open Banking
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> Biometrics
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> AR / VR
+                      </label>
+                    </div>
+                  </div>
 
-              {/* SECTION 3: Context */}
-              <div className="form-section">
-                <div className="form-section-header">
-                  <span className="section-number">3</span>
-                  <span className="section-name">BUSINESS CONTEXT</span>
-                </div>
+                  <div className="form-row">
+                    <label className="form-label">SOLUTION TYPE *</label>
+                    <select className="form-input">
+                      <option value="">-- Select Solution Type --</option>
+                      <option>Mobile App (iOS/Android)</option>
+                      <option>Web Application</option>
+                      <option>Desktop Application</option>
+                      <option>API / Backend Service</option>
+                      <option>Browser Extension</option>
+                      <option>Chatbot / Conversational AI</option>
+                      <option>Hardware + Software</option>
+                      <option>Platform / Marketplace</option>
+                    </select>
+                  </div>
 
-                <div className="form-row">
-                  <label className="form-label">TARGET SEGMENT *</label>
-                  <select className="form-input">
-                    <option value="">-- Select Target Segment --</option>
-                    <option>Retail Banking - Gen Z (18-25)</option>
-                    <option>Retail Banking - Millennials (26-41)</option>
-                    <option>Retail Banking - Gen X (42-57)</option>
-                    <option>Retail Banking - Seniors (58+)</option>
-                    <option>Small Business / SME</option>
-                    <option>Corporate Clients</option>
-                    <option>High Net Worth Individuals</option>
-                    <option>Internal - Bank Employees</option>
-                    <option>B2B - Other Financial Institutions</option>
-                    <option>Universal / All Segments</option>
-                  </select>
-                </div>
-
-                <div className="form-row">
-                  <label className="form-label">MONETIZATION MODEL</label>
-                  <select className="form-input">
-                    <option value="">-- Select Monetization Model --</option>
-                    <option>Subscription (Monthly/Annual)</option>
-                    <option>Transaction Fees</option>
-                    <option>Freemium (Basic Free + Premium)</option>
-                    <option>One-time Purchase</option>
-                    <option>Commission Based</option>
-                    <option>Advertising Supported</option>
-                    <option>Cost Savings (Internal Tool)</option>
-                    <option>Data Monetization</option>
-                    <option>White Label / Licensing</option>
-                    <option>Not Applicable / TBD</option>
-                  </select>
-                </div>
-
-                <div className="form-row">
-                  <label className="form-label">ESTIMATED MARKET SIZE (optional)</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g., €2.5B European digital savings market, growing 15% YoY"
-                  />
-                </div>
-              </div>
-
-              {/* SECTION 4: Regulations */}
-              <div className="form-section">
-                <div className="form-section-header">
-                  <span className="section-number">4</span>
-                  <span className="section-name">REGULATORY CONSIDERATIONS</span>
-                </div>
-
-                <div className="form-row">
-                  <label className="form-label">APPLICABLE REGULATIONS (select all that apply)</label>
-                  <div className="checkbox-group">
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> GDPR (Data Protection)
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> PSD2 / Open Banking
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> MiFID II (Investment Services)
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> AML / KYC Requirements
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> Basel III / IV
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> DORA (Digital Operational Resilience)
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> AI Act (EU)
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> Not Sure / Need Guidance
-                    </label>
+                  <div className="form-row">
+                    <label className="form-label">TECH STACK DETAILS (optional)</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g., React Native, Node.js, PostgreSQL, TensorFlow, AWS Lambda"
+                    />
                   </div>
                 </div>
 
-                <div className="form-row">
-                  <label className="form-label">COMPLIANCE NOTES (optional)</label>
-                  <textarea
-                    className="form-input form-textarea-small"
-                    placeholder="e.g., We've designed with privacy-by-default. All user data is encrypted and stored in EU data centers. We need guidance on cross-border data transfers."
-                  ></textarea>
-                </div>
-              </div>
+                {/* SECTION 3: Context */}
+                <div className="form-section">
+                  <div className="form-section-header">
+                    <span className="section-number">3</span>
+                    <span className="section-name">BUSINESS CONTEXT</span>
+                  </div>
 
-              {/* SECTION 5: Differentiators */}
-              <div className="form-section">
-                <div className="form-section-header">
-                  <span className="section-number">5</span>
-                  <span className="section-name">DIFFERENTIATORS & IMPLEMENTATION</span>
-                </div>
+                  <div className="form-row">
+                    <label className="form-label">TARGET SEGMENT *</label>
+                    <select className="form-input">
+                      <option value="">-- Select Target Segment --</option>
+                      <option>Retail Banking - Gen Z (18-25)</option>
+                      <option>Retail Banking - Millennials (26-41)</option>
+                      <option>Retail Banking - Gen X (42-57)</option>
+                      <option>Retail Banking - Seniors (58+)</option>
+                      <option>Small Business / SME</option>
+                      <option>Corporate Clients</option>
+                      <option>High Net Worth Individuals</option>
+                      <option>Internal - Bank Employees</option>
+                      <option>B2B - Other Financial Institutions</option>
+                      <option>Universal / All Segments</option>
+                    </select>
+                  </div>
 
-                <div className="form-row">
-                  <label className="form-label">WHAT MAKES THIS UNIQUE? *</label>
-                  <textarea
-                    className="form-input form-textarea"
-                    placeholder="e.g., Unlike existing apps, we use behavioral psychology and social proof to create 'savings challenges' with friends. Our AI predicts the optimal micro-transfer amount based on upcoming expenses, ensuring users never overdraft."
-                  ></textarea>
-                </div>
+                  <div className="form-row">
+                    <label className="form-label">MONETIZATION MODEL</label>
+                    <select className="form-input">
+                      <option value="">-- Select Monetization Model --</option>
+                      <option>Subscription (Monthly/Annual)</option>
+                      <option>Transaction Fees</option>
+                      <option>Freemium (Basic Free + Premium)</option>
+                      <option>One-time Purchase</option>
+                      <option>Commission Based</option>
+                      <option>Advertising Supported</option>
+                      <option>Cost Savings (Internal Tool)</option>
+                      <option>Data Monetization</option>
+                      <option>White Label / Licensing</option>
+                      <option>Not Applicable / TBD</option>
+                    </select>
+                  </div>
 
-                <div className="form-row">
-                  <label className="form-label">CURRENT IMPLEMENTATION LEVEL *</label>
-                  <div className="checkbox-group">
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> Frontend UI/UX
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> Backend / API
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> Database Schema
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> Authentication / Security
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> AI/ML Models
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> Third-party Integrations
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> Testing / QA
-                    </label>
-                    <label className="checkbox-label">
-                      <input type="checkbox" /> Documentation
-                    </label>
+                  <div className="form-row">
+                    <label className="form-label">ESTIMATED MARKET SIZE (optional)</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g., €2.5B European digital savings market, growing 15% YoY"
+                    />
                   </div>
                 </div>
 
-                <div className="form-row">
-                  <label className="form-label">PROJECT STAGE *</label>
-                  <select className="form-input">
-                    <option value="">-- Select Stage --</option>
-                    <option>Proof of Concept (PoC)</option>
-                    <option>Working Prototype</option>
-                    <option>Alpha Version</option>
-                    <option>Beta Version</option>
-                    <option>MVP Ready</option>
-                    <option>Production Ready</option>
-                  </select>
+                {/* SECTION 4: Regulations */}
+                <div className="form-section">
+                  <div className="form-section-header">
+                    <span className="section-number">4</span>
+                    <span className="section-name">REGULATORY CONSIDERATIONS</span>
+                  </div>
+
+                  <div className="form-row">
+                    <label className="form-label">APPLICABLE REGULATIONS (select all that apply)</label>
+                    <div className="checkbox-group">
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> GDPR (Data Protection)
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> PSD2 / Open Banking
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> MiFID II (Investment Services)
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> AML / KYC Requirements
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> Basel III / IV
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> DORA (Digital Operational Resilience)
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> AI Act (EU)
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> Not Sure / Need Guidance
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <label className="form-label">COMPLIANCE NOTES (optional)</label>
+                    <textarea
+                      className="form-input form-textarea-small"
+                      placeholder="e.g., We've designed with privacy-by-default. All user data is encrypted and stored in EU data centers. We need guidance on cross-border data transfers."
+                    ></textarea>
+                  </div>
                 </div>
 
-                <div className="form-row">
-                  <label className="form-label">GITHUB REPOSITORY LINK *</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="https://github.com/your-username/your-project"
-                  />
-                  <span className="form-hint">⚠ Required: Must have at least a basic implementation</span>
+                {/* SECTION 5: Differentiators */}
+                <div className="form-section">
+                  <div className="form-section-header">
+                    <span className="section-number">5</span>
+                    <span className="section-name">DIFFERENTIATORS & IMPLEMENTATION</span>
+                  </div>
+
+                  <div className="form-row">
+                    <label className="form-label">WHAT MAKES THIS UNIQUE? *</label>
+                    <textarea
+                      className="form-input form-textarea"
+                      placeholder="e.g., Unlike existing apps, we use behavioral psychology and social proof to create 'savings challenges' with friends. Our AI predicts the optimal micro-transfer amount based on upcoming expenses, ensuring users never overdraft."
+                    ></textarea>
+                  </div>
+
+                  <div className="form-row">
+                    <label className="form-label">CURRENT IMPLEMENTATION LEVEL *</label>
+                    <div className="checkbox-group">
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> Frontend UI/UX
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> Backend / API
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> Database Schema
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> Authentication / Security
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> AI/ML Models
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> Third-party Integrations
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> Testing / QA
+                      </label>
+                      <label className="checkbox-label">
+                        <input type="checkbox" /> Documentation
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <label className="form-label">PROJECT STAGE *</label>
+                    <select className="form-input">
+                      <option value="">-- Select Stage --</option>
+                      <option>Proof of Concept (PoC)</option>
+                      <option>Working Prototype</option>
+                      <option>Alpha Version</option>
+                      <option>Beta Version</option>
+                      <option>MVP Ready</option>
+                      <option>Production Ready</option>
+                    </select>
+                  </div>
+
+                  <div className="form-row">
+                    <label className="form-label">GITHUB REPOSITORY LINK *</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="https://github.com/your-username/your-project"
+                    />
+                    <span className="form-hint">⚠ Required: Must have at least a basic implementation</span>
+                  </div>
+
+                  <div className="form-row">
+                    <label className="form-label">MARKET RESEARCH / COMPETITOR ANALYSIS</label>
+                    <textarea
+                      className="form-input form-textarea"
+                      placeholder="e.g., Analyzed: Acorns (US - $3B valuation, lacks social features), Plum (UK - AI-based but limited personalization), Revolut Vaults (no gamification). Our edge: Social challenges + predictive AI + DB's trust factor."
+                    ></textarea>
+                  </div>
                 </div>
 
-                <div className="form-row">
-                  <label className="form-label">MARKET RESEARCH / COMPETITOR ANALYSIS</label>
-                  <textarea
-                    className="form-input form-textarea"
-                    placeholder="e.g., Analyzed: Acorns (US - $3B valuation, lacks social features), Plum (UK - AI-based but limited personalization), Revolut Vaults (no gamification). Our edge: Social challenges + predictive AI + DB's trust factor."
-                  ></textarea>
-                </div>
-              </div>
+                {/* SECTION 6: Other Details */}
+                <div className="form-section">
+                  <div className="form-section-header">
+                    <span className="section-number">6</span>
+                    <span className="section-name">OTHER DETAILS</span>
+                  </div>
 
-              {/* SECTION 6: Other Details */}
-              <div className="form-section">
-                <div className="form-section-header">
-                  <span className="section-number">6</span>
-                  <span className="section-name">OTHER DETAILS</span>
+                  <div className="form-row">
+                    <label className="form-label">TEAM COMPOSITION (optional)</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g., 2 Full-stack devs, 1 ML engineer, 1 UX designer"
+                    />
+                  </div>
+
+                  <div className="form-row">
+                    <label className="form-label">DEMO VIDEO / PRESENTATION LINK (optional)</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="https://youtube.com/watch?v=... or https://docs.google.com/presentation/..."
+                    />
+                  </div>
+
+                  <div className="form-row">
+                    <label className="form-label">WHAT DO YOU NEED FROM DB? (optional)</label>
+                    <textarea
+                      className="form-input form-textarea-small"
+                      placeholder="e.g., Access to sandbox API for account data, mentorship from product team, regulatory guidance, potential pilot with 1000 users"
+                    ></textarea>
+                  </div>
+
+                  <div className="form-row">
+                    <label className="form-label">ADDITIONAL NOTES</label>
+                    <textarea
+                      className="form-input form-textarea-small"
+                      placeholder="Any other information you'd like to share about your idea..."
+                    ></textarea>
+                  </div>
                 </div>
 
-                <div className="form-row">
-                  <label className="form-label">TEAM COMPOSITION (optional)</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g., 2 Full-stack devs, 1 ML engineer, 1 UX designer"
-                  />
+                <div style={{ marginTop: "25px", paddingTop: "20px", borderTop: "2px dashed var(--teletext-cyan)" }}>
+                  <button type="button" className="submit-btn ai-btn" onClick={generateMockup}>
+                    🤖 GENERATE AI MOCKUP
+                  </button>
+                  <button type="submit" className="submit-btn">
+                    ▶ SUBMIT IDEA
+                  </button>
                 </div>
-
-                <div className="form-row">
-                  <label className="form-label">DEMO VIDEO / PRESENTATION LINK (optional)</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="https://youtube.com/watch?v=... or https://docs.google.com/presentation/..."
-                  />
-                </div>
-
-                <div className="form-row">
-                  <label className="form-label">WHAT DO YOU NEED FROM DB? (optional)</label>
-                  <textarea
-                    className="form-input form-textarea-small"
-                    placeholder="e.g., Access to sandbox API for account data, mentorship from product team, regulatory guidance, potential pilot with 1000 users"
-                  ></textarea>
-                </div>
-
-                <div className="form-row">
-                  <label className="form-label">ADDITIONAL NOTES</label>
-                  <textarea
-                    className="form-input form-textarea-small"
-                    placeholder="Any other information you'd like to share about your idea..."
-                  ></textarea>
-                </div>
-              </div>
-
-              <div style={{ marginTop: "25px", paddingTop: "20px", borderTop: "2px dashed var(--teletext-cyan)" }}>
-                <button type="button" className="submit-btn ai-btn" onClick={generateMockup}>
-                  🤖 GENERATE AI MOCKUP
-                </button>
-                <button type="submit" className="submit-btn">
-                  ▶ SUBMIT IDEA
-                </button>
-              </div>
-            </form>
+              </form>
+            )}
 
             <div id="ai-preview" style={{ display: "none", marginTop: "20px" }}>
               <div className="mockup-preview">
@@ -683,10 +944,9 @@ export default function HomePage() {
                       {getStatusLabel(idea.status)}
                     </span>
                     <span className="idea-votes">
-                      ▲{" "}
-                      <span className="vote-count" style={{ fontSize: index < 3 ? "24px" : "20px" }}>
-                        {idea.votes}
-                      </span>
+                      <span style={{ color: "var(--teletext-green)" }}>▲{idea.likes}</span>
+                      {" / "}
+                      <span style={{ color: "var(--teletext-red)" }}>▼{idea.dislikes}</span>
                     </span>
                   </div>
                 );
@@ -707,27 +967,43 @@ export default function HomePage() {
                 present their ideas using the retro aesthetics of the Teletext service.
               </p>
 
-              <p style={{ color: "var(--teletext-white)" }}>
-                <span className="about-list-item">Describe your idea in detail</span>
+              <p style={{ color: "var(--teletext-white)", marginTop: "20px" }}>
+                <span className="about-list-item">◆ Describe your idea in detail</span>
                 <br />
-                <span className="about-list-item">
-                  Our AI automatically generates a visual mockup
-                </span>
+                <span className="about-list-item">◆ Our AI automatically generates a visual mockup</span>
                 <br />
-                <span className="about-list-item">
-                  Attach your GitHub link with your project
-                </span>
+                <span className="about-list-item">◆ Attach your GitHub link with your project</span>
                 <br />
-                <span className="about-list-item">
-                  The community votes for the best ideas
-                </span>
+                <span className="about-list-item">◆ The community votes for the best ideas (like/dislike)</span>
                 <br />
-                <span className="about-list-item">
-                  DB teams evaluate and adopt projects
-                </span>
+                <span className="about-list-item">◆ DB teams evaluate and adopt projects</span>
               </p>
 
-              <p className="about-footer">
+              <div style={{ marginTop: "25px", padding: "15px", background: "rgba(0,0,50,0.5)", border: "2px solid var(--teletext-cyan)" }}>
+                <p style={{ color: "var(--teletext-yellow)", marginBottom: "10px" }}>★ IDEA STATUS FLOW:</p>
+                <p style={{ color: "var(--teletext-white)", fontSize: "18px" }}>
+                  <span style={{ color: "var(--teletext-green)" }}>NEW</span> → 
+                  <span style={{ color: "var(--teletext-yellow)" }}> REVIEW</span> → 
+                  <span style={{ color: "var(--teletext-cyan)" }}> APPROVED</span> → 
+                  <span style={{ color: "var(--teletext-red)" }}> BUILD</span> → 
+                  <span style={{ color: "var(--teletext-magenta)" }}> COMPLETED</span>
+                </p>
+              </div>
+
+              <div style={{ marginTop: "25px", padding: "15px", background: "rgba(0,0,50,0.5)", border: "2px solid var(--teletext-yellow)" }}>
+                <p style={{ color: "var(--teletext-yellow)", marginBottom: "10px" }}>★ USER ROLES:</p>
+                <p style={{ color: "var(--teletext-cyan)", fontSize: "18px" }}>
+                  <strong>GUEST:</strong> Browse ideas, view GitHub links
+                </p>
+                <p style={{ color: "var(--teletext-green)", fontSize: "18px" }}>
+                  <strong>USER:</strong> + Submit ideas, vote, comment
+                </p>
+                <p style={{ color: "var(--teletext-magenta)", fontSize: "18px" }}>
+                  <strong>ADMIN:</strong> + Manage users & ideas, change statuses
+                </p>
+              </div>
+
+              <p className="about-footer" style={{ marginTop: "25px" }}>
                 Whether you&apos;re a student, freelancer or passionate developer,
                 your ideas can reach Deutsche Bank decision makers!
               </p>
@@ -735,11 +1011,114 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* Tab Content: Admin (Admin only) */}
+        {isAdmin && (
+          <div className={`tab-content ${activeTab === "admin" ? "active" : ""}`}>
+            <div className="content-section">
+              <span className="section-title" style={{ color: "var(--teletext-magenta)" }}>★ ADMIN PANEL</span>
+
+              {/* User Management */}
+              <div className="admin-section">
+                <div className="admin-section-title">◆ USER MANAGEMENT</div>
+                {adminLoading ? (
+                  <div className="loading">Loading users...</div>
+                ) : (
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>NAME</th>
+                        <th>EMAIL</th>
+                        <th>ROLE</th>
+                        <th>ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((user) => (
+                        <tr key={user.id}>
+                          <td>{user.name}</td>
+                          <td>{user.email}</td>
+                          <td>
+                            <select
+                              className="status-select"
+                              value={user.role}
+                              onChange={(e) => handleUpdateUserRole(user.id, e.target.value)}
+                            >
+                              <option value="user">USER</option>
+                              <option value="admin">ADMIN</option>
+                            </select>
+                          </td>
+                          <td>
+                            <button
+                              className="admin-action-btn delete"
+                              onClick={() => handleDeleteUser(user.id)}
+                              disabled={user.id === session?.user?.id}
+                            >
+                              DELETE
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {/* Idea Management */}
+              <div className="admin-section">
+                <div className="admin-section-title">◆ IDEA MANAGEMENT</div>
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>TITLE</th>
+                      <th>STATUS</th>
+                      <th>VOTES</th>
+                      <th>ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ideas.map((idea) => (
+                      <tr key={idea.id}>
+                        <td>{idea.title}</td>
+                        <td>
+                          <select
+                            className="status-select"
+                            value={idea.status}
+                            onChange={(e) => handleUpdateIdeaStatus(idea.id, e.target.value)}
+                          >
+                            <option value="new">NEW</option>
+                            <option value="review">REVIEW</option>
+                            <option value="approved">APPROVED</option>
+                            <option value="build">BUILD</option>
+                            <option value="completed">COMPLETED</option>
+                          </select>
+                        </td>
+                        <td>
+                          <span style={{ color: "var(--teletext-green)" }}>▲{idea.likes}</span>
+                          {" / "}
+                          <span style={{ color: "var(--teletext-red)" }}>▼{idea.dislikes}</span>
+                        </td>
+                        <td>
+                          <button
+                            className="admin-action-btn delete"
+                            onClick={() => handleDeleteIdea(idea.id)}
+                          >
+                            DELETE
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Ticker */}
         <div className="ticker">
           <span className="ticker-content">
             ★ Welcome to DB IdeaText! ★ Innovation platform for Deutsche Bank ★ 
-            Add your idea and get feedback from the community! ★ 
+            {isLoggedIn ? `Logged in as ${session.user.name} (${userRole})` : "Login to submit ideas and vote!"} ★ 
             Use retro Teletext aesthetics to present your project! ★
           </span>
         </div>
@@ -749,7 +1128,9 @@ export default function HomePage() {
           <button className="color-btn btn-red" onClick={() => showTab("browse")}>
             ⬤ INDEX
           </button>
-          <button className="color-btn btn-green">⬤ VOTE</button>
+          <button className="color-btn btn-green" disabled={!isLoggedIn} title={!isLoggedIn ? "Login to vote" : ""}>
+            ⬤ VOTE
+          </button>
           <button className="color-btn btn-yellow">⬤ SEARCH</button>
           <button className="color-btn btn-blue" onClick={() => showTab("submit")}>
             ⬤ SUBMIT
@@ -768,15 +1149,95 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* Auth Modal */}
+      {showAuthModal && (
+        <div className="auth-modal-overlay" onClick={() => setShowAuthModal(false)}>
+          <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="auth-modal-header">
+              <span className="auth-modal-title">
+                {authMode === "login" ? "► LOGIN" : "✎ REGISTER"}
+              </span>
+              <button className="auth-modal-close" onClick={() => setShowAuthModal(false)}>
+                ✕
+              </button>
+            </div>
+            <div className="auth-modal-body">
+              <div className="auth-tabs">
+                <button
+                  className={`auth-tab ${authMode === "login" ? "active" : ""}`}
+                  onClick={() => { setAuthMode("login"); setAuthError(""); }}
+                >
+                  LOGIN
+                </button>
+                <button
+                  className={`auth-tab ${authMode === "register" ? "active" : ""}`}
+                  onClick={() => { setAuthMode("register"); setAuthError(""); }}
+                >
+                  REGISTER
+                </button>
+              </div>
+
+              {authError && <div className="auth-error">{authError}</div>}
+
+              <form className="auth-form" onSubmit={handleAuth}>
+                {authMode === "register" && (
+                  <div className="form-row">
+                    <label className="form-label">NAME</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={authName}
+                      onChange={(e) => setAuthName(e.target.value)}
+                      placeholder="Your display name"
+                    />
+                  </div>
+                )}
+                <div className="form-row">
+                  <label className="form-label">EMAIL *</label>
+                  <input
+                    type="email"
+                    className="form-input"
+                    value={authEmail}
+                    onChange={(e) => setAuthEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    required
+                  />
+                </div>
+                <div className="form-row">
+                  <label className="form-label">PASSWORD *</label>
+                  <input
+                    type="password"
+                    className="form-input"
+                    value={authPassword}
+                    onChange={(e) => setAuthPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="submit-btn"
+                  disabled={authLoading}
+                  style={{ width: "100%", marginTop: "10px" }}
+                >
+                  {authLoading ? "PROCESSING..." : authMode === "login" ? "► LOGIN" : "✎ CREATE ACCOUNT"}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Popup for Idea Detail */}
       {selectedIdea && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div>
-                <div className="modal-title">{selectedIdea.title.split(" - ")[0]}</div>
+                <div className="modal-title">{selectedIdea.title}</div>
                 <div className="modal-meta">
-                  Submitted by: {selectedIdea.author} | {selectedIdea.date} | ID: #{selectedIdea.id}
+                  Submitted by: {selectedIdea.userName || "Anonymous"} | ID: #{selectedIdea.id.slice(0, 8)}
                 </div>
               </div>
               <button className="modal-close" onClick={closeModal}>
@@ -785,50 +1246,72 @@ export default function HomePage() {
             </div>
 
             <div className="modal-body">
-              <div style={{ marginBottom: "15px" }}>
+              <div style={{ marginBottom: "15px", display: "flex", alignItems: "center", gap: "20px" }}>
                 <span className={`idea-status ${getStatusClass(selectedIdea.status)}`}>
                   {getStatusLabel(selectedIdea.status)}
                 </span>
-                <span style={{ marginLeft: "15px", color: "var(--teletext-green)", fontSize: "22px" }}>
-                  ▲ {selectedIdea.votes} votes
-                </span>
-              </div>
-
-              <div className="modal-description">{selectedIdea.description}</div>
-
-              <div className="mockup-preview">
-                <div className="mockup-label">◄ AI GENERATED MOCKUP ►</div>
-                <div className="mockup-frame">
-                  <div className="mockup-content">
-                    <div style={{ color: "#00ff00", fontSize: "14px" }}>
-                      ┌─────────────────────────────────┐
-                    </div>
-                    <div style={{ color: "#ffff00" }}>
-                      {selectedIdea.title.split(" - ")[0].toUpperCase()}
-                    </div>
-                    <div style={{ color: "#00ffff", fontSize: "14px" }}>
-                      ━━━━━━━━━━━━━━━━━━━━━━━━
-                    </div>
-                    <div style={{ color: "#fff" }}>Status: {getStatusLabel(selectedIdea.status)}</div>
-                    <div style={{ color: "#00ff00" }}>Votes: {selectedIdea.votes}</div>
-                    <div style={{ color: "#00ff00", fontSize: "14px" }}>
-                      └─────────────────────────────────┘
-                    </div>
-                  </div>
+                <div className="vote-buttons">
+                  <button
+                    className={`vote-btn like`}
+                    onClick={() => handleVote(selectedIdea.id, "like")}
+                    disabled={!isLoggedIn}
+                    title={!isLoggedIn ? "Login to vote" : "Like this idea"}
+                  >
+                    ▲ LIKE <span>{selectedIdea.likes}</span>
+                  </button>
+                  <button
+                    className={`vote-btn dislike`}
+                    onClick={() => handleVote(selectedIdea.id, "dislike")}
+                    disabled={!isLoggedIn}
+                    title={!isLoggedIn ? "Login to vote" : "Dislike this idea"}
+                  >
+                    ▼ DISLIKE <span>{selectedIdea.dislikes}</span>
+                  </button>
                 </div>
               </div>
 
+              {!isLoggedIn && (
+                <div className="guest-message" style={{ marginBottom: "15px" }}>
+                  <a onClick={() => { closeModal(); setShowAuthModal(true); }}>Login</a> to vote and comment on ideas.
+                </div>
+              )}
+
+              <div className="modal-description">{selectedIdea.shortDescription}</div>
+
               <div className="modal-actions">
                 <a
-                  href={selectedIdea.github}
+                  href={selectedIdea.githubLink}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="github-link"
                 >
                   ⬡ GitHub Repository
                 </a>
-                <button className="submit-btn">▲ VOTE</button>
-                <button className="submit-btn ai-btn">💬 COMMENT</button>
+                {isLoggedIn && (
+                  <button className="submit-btn ai-btn">💬 COMMENT</button>
+                )}
+                {isAdmin && (
+                  <>
+                    <select
+                      className="status-select"
+                      value={selectedIdea.status}
+                      onChange={(e) => handleUpdateIdeaStatus(selectedIdea.id, e.target.value)}
+                      style={{ marginLeft: "auto" }}
+                    >
+                      <option value="new">NEW</option>
+                      <option value="review">REVIEW</option>
+                      <option value="approved">APPROVED</option>
+                      <option value="build">BUILD</option>
+                      <option value="completed">COMPLETED</option>
+                    </select>
+                    <button
+                      className="admin-action-btn delete"
+                      onClick={() => handleDeleteIdea(selectedIdea.id)}
+                    >
+                      DELETE IDEA
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

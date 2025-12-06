@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import "@/styles/teletext.css";
+import { AuthProvider } from "@/components/AuthProvider";
 
 export const metadata: Metadata = {
   title: "DB IdeaText - Innovation Hub",
-  description: "O platformă socială de crowdsourcing pentru idei inovative în banking, cu design retro Teletext.",
-  keywords: ["banking", "fintech", "idei", "inovație", "teletext", "retro", "Deutsche Bank"],
+  description: "A social crowdsourcing platform for innovative banking ideas, with retro Teletext design.",
+  keywords: ["banking", "fintech", "ideas", "innovation", "teletext", "retro", "Deutsche Bank"],
 };
 
 export default function RootLayout({
@@ -13,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ro">
+    <html lang="en">
       <head>
         <link
           href="https://fonts.googleapis.com/css2?family=VT323&display=swap"
@@ -21,9 +22,11 @@ export default function RootLayout({
         />
       </head>
       <body>
-        {/* CRT Overlay Effect */}
-        <div className="crt-overlay" />
-        {children}
+        <AuthProvider>
+          {/* CRT Overlay Effect */}
+          <div className="crt-overlay" />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
