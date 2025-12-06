@@ -1340,20 +1340,6 @@ export default function HomePage() {
           </span>
         </div>
 
-        {/* Bottom Navigation */}
-        <div className="bottom-nav">
-          <button className="color-btn btn-red" onClick={() => showTab("browse")}>
-            ⬤ INDEX
-          </button>
-          <button className="color-btn btn-green" disabled={!isLoggedIn} title={!isLoggedIn ? "Login to vote" : ""}>
-            ⬤ VOTE
-          </button>
-          <button className="color-btn btn-yellow">⬤ SEARCH</button>
-          <button className="color-btn btn-blue" onClick={() => showTab("submit")}>
-            ⬤ SUBMIT
-          </button>
-        </div>
-
         <div className="mosaic-border"></div>
 
         <div className="footer">
