@@ -439,26 +439,26 @@ body {
 /* Stats Bar */
 .stats-bar {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
     margin-bottom: 15px;
 }
 
 .stat-item {
     text-align: center;
-    padding: 10px;
+    padding: 8px 5px;
     background: #000044;
 }
 
 .stat-value {
-    font-size: 38px;
+    font-size: 32px;
     color: var(--teletext-yellow);
     display: block;
 }
 
 .stat-label {
     color: var(--teletext-cyan);
-    font-size: 18px;
+    font-size: 14px;
 }
 
 /* Bottom Navigation */
@@ -558,6 +558,12 @@ body {
         display: none;
     }
 
+    .stats-bar {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 500px) {
     .stats-bar {
         grid-template-columns: repeat(2, 1fr);
     }

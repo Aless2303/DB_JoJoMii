@@ -1142,11 +1142,6 @@ export default function HomePage() {
         <div className="footer">
           © 2025 Deutsche Bank Innovation Lab | Powered by AI | Styled by Nostalgia
         </div>
-
-        {/* Page Indicator */}
-        <div className="page-indicator">
-          <span className="page-num">{currentPage}</span>
-        </div>
       </div>
 
       {/* Auth Modal */}
