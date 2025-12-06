@@ -1397,14 +1397,14 @@ export default function HomePage() {
                     dangerouslySetInnerHTML={{ __html: selectedIdea.generatedHtml }}
                     style={{
                       background: "#0000AA",
-                      padding: "20px",
+                      padding: "0",
                       borderRadius: "8px",
                       marginBottom: "20px",
                       fontFamily: "VT323, monospace",
-                      fontSize: "16px",
-                      lineHeight: "1.4",
-                      maxHeight: "70vh",
-                      overflow: "auto"
+                      maxHeight: "calc(90vh - 200px)",
+                      overflow: "auto",
+                      scrollbarWidth: "thin",
+                      scrollbarColor: "#00FFFF #000033"
                     }}
                   />
                 </>

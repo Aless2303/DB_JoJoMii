@@ -1,19 +1,54 @@
 import Link from "next/link";
 import { TeletextScreen, TeletextHeader, TeletextBox, StarRating } from "@/components/teletext";
+import { db } from "@/lib/db";
+import { ideas } from "@/lib/db/schema";
+import { desc, sql } from "drizzle-orm";
 
-// Mock data pentru top idei
-const topIdeas = [
-  { id: "1", rank: 1, title: "Voice Banking Assistant", rating: 4.9, votes: 156, category: "AI" },
-  { id: "2", rank: 2, title: "Carbon Footprint Card", rating: 4.8, votes: 142, category: "ESG" },
-  { id: "3", rank: 3, title: "AI Credit Scoring", rating: 4.7, votes: 128, category: "AI" },
-  { id: "4", rank: 4, title: "Instant Micro-Loans", rating: 4.6, votes: 115, category: "LEND" },
-  { id: "5", rank: 5, title: "Biometric Auth 2.0", rating: 4.5, votes: 98, category: "SEC" },
-  { id: "6", rank: 6, title: "Open Banking Dashboard", rating: 4.4, votes: 87, category: "API" },
-  { id: "7", rank: 7, title: "Blockchain KYC", rating: 4.3, votes: 76, category: "BLOCK" },
-  { id: "8", rank: 8, title: "Green Investment Tracker", rating: 4.2, votes: 65, category: "ESG" },
-];
+// Fetch top ideas sorted by (likes - dislikes) descending
+async function getTopIdeas() {
+  const result = await db
+    .select({
+      id: ideas.id,
+      title: ideas.title,
+      category: ideas.category,
+      likes: ideas.likes,
+      dislikes: ideas.dislikes,
+      aiScore: ideas.aiScore,
+      status: ideas.status,
+    })
+    .from(ideas)
+    .orderBy(desc(sql`${ideas.likes} - ${ideas.dislikes}`))
+    .limit(10);
+  
+  return result;
+}
 
-export default function TopPage() {
+// Map category to short code
+function getCategoryCode(category: string): string {
+  const codeMap: Record<string, string> = {
+    "payments": "PAY",
+    "lending": "LEND",
+    "investments": "INV",
+    "customer-experience": "CX",
+    "security": "SEC",
+    "open-banking": "API",
+    "sustainability": "ESG",
+    "other": "OTHER",
+    "Digital Banking": "DIGI",
+    "Payments & Transfers": "PAY",
+    "Wealth Management": "WEALTH",
+    "Lending & Credit": "LEND",
+    "Insurance": "INS",
+    "Fraud & Security": "SEC",
+    "Customer Experience": "CX",
+    "Internal Operations": "OPS",
+    "ESG & Sustainability": "ESG",
+  };
+  return codeMap[category] || category.substring(0, 4).toUpperCase();
+}
+
+export default async function TopPage() {
+  const topIdeas = await getTopIdeas();
   return (
     <TeletextScreen>
       <TeletextHeader 
@@ -39,48 +74,65 @@ export default function TopPage() {
       </div>
 
       <div className="space-y-3 mt-6">
-        {topIdeas.map((idea, index) => (
-          <Link
-            key={idea.id}
-            href={`/ideas/${idea.id}`}
-            className="block group"
-          >
-            <div className={`
-              p-3 border-2 transition-all
-              ${index === 0 ? "border-teletext-yellow tt-yellow" : 
-                index === 1 ? "border-teletext-white tt-white" :
-                index === 2 ? "border-teletext-yellow tt-yellow opacity-80" :
-                "border-teletext-cyan tt-cyan"}
-              group-hover:bg-teletext-cyan group-hover:bg-opacity-10
-            `}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className={`
-                    text-2xl font-bold
-                    ${index === 0 ? "tt-yellow" : 
-                      index === 1 ? "tt-white" :
-                      index === 2 ? "tt-yellow" : "tt-cyan"}
-                  `}>
-                    #{idea.rank}
-                  </span>
-                  <div>
-                    <div className="font-bold group-hover:tt-white">
-                      {idea.title}
+        {topIdeas.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="tt-yellow text-xl">░░░ NU EXISTĂ IDEI VOTATE ░░░</div>
+            <div className="tt-cyan mt-2">Fii primul care adaugă și votează o idee!</div>
+          </div>
+        ) : (
+          topIdeas.map((idea, index) => {
+            const netVotes = (idea.likes || 0) - (idea.dislikes || 0);
+            const aiScoreDisplay = idea.aiScore ? `${idea.aiScore}%` : 'N/A';
+            
+            return (
+              <Link
+                key={idea.id}
+                href={`/ideas/${idea.id}`}
+                className="block group"
+              >
+                <div className={`
+                  p-3 border-2 transition-all
+                  ${index === 0 ? "border-teletext-yellow tt-yellow" : 
+                    index === 1 ? "border-teletext-white tt-white" :
+                    index === 2 ? "border-teletext-yellow tt-yellow opacity-80" :
+                    "border-teletext-cyan tt-cyan"}
+                  group-hover:bg-teletext-cyan group-hover:bg-opacity-10
+                `}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className={`
+                        text-2xl font-bold
+                        ${index === 0 ? "tt-yellow" : 
+                          index === 1 ? "tt-white" :
+                          index === 2 ? "tt-yellow" : "tt-cyan"}
+                      `}>
+                        #{index + 1}
+                      </span>
+                      <div>
+                        <div className="font-bold group-hover:tt-white">
+                          {idea.title.length > 40 ? idea.title.substring(0, 40) + '...' : idea.title}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="tt-green">[{getCategoryCode(idea.category)}]</span>
+                          <span className="tt-cyan">
+                            <span className="tt-green">▲{idea.likes || 0}</span>
+                            /
+                            <span className="tt-red">▼{idea.dislikes || 0}</span>
+                            {" "}({netVotes > 0 ? '+' : ''}{netVotes} net)
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="tt-green">[{idea.category}]</span>
-                      <span className="tt-cyan">{idea.votes} voturi</span>
+                    <div className="text-right">
+                      <div className="tt-yellow text-lg font-bold">AI: {aiScoreDisplay}</div>
+                      <div className="text-sm tt-cyan">{idea.status.toUpperCase()}</div>
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <StarRating rating={Math.round(idea.rating)} readonly />
-                  <div className="tt-yellow text-sm">{idea.rating.toFixed(1)}</div>
-                </div>
-              </div>
-            </div>
-          </Link>
-        ))}
+              </Link>
+            );
+          })
+        )}
       </div>
 
       {/* Legend */}

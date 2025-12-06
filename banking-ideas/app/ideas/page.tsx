@@ -1,19 +1,57 @@
 import Link from "next/link";
 import { TeletextScreen, TeletextHeader, TeletextTable, StarRating } from "@/components/teletext";
+import { db } from "@/lib/db";
+import { ideas } from "@/lib/db/schema";
+import { desc } from "drizzle-orm";
+import { CATEGORY_LABELS } from "@/lib/schemas";
 
-// Mock data - în producție va veni din baza de date
-const mockIdeas = [
-  { id: "1", number: "001", title: "AI Credit Scoring", category: "AI", rating: 4, pageNumber: 110 },
-  { id: "2", number: "002", title: "Blockchain KYC", category: "BLOCK", rating: 3, pageNumber: 120 },
-  { id: "3", number: "003", title: "Voice Banking Assistant", category: "AI", rating: 5, pageNumber: 130 },
-  { id: "4", number: "004", title: "Green Investment Tracker", category: "ESG", rating: 3, pageNumber: 140 },
-  { id: "5", number: "005", title: "Instant Micro-Loans", category: "LEND", rating: 4, pageNumber: 150 },
-  { id: "6", number: "006", title: "Biometric Auth 2.0", category: "SEC", rating: 4, pageNumber: 160 },
-  { id: "7", number: "007", title: "Open Banking Dashboard", category: "API", rating: 3, pageNumber: 170 },
-  { id: "8", number: "008", title: "Carbon Footprint Card", category: "ESG", rating: 5, pageNumber: 180 },
-];
+// Fetch ideas from database
+async function getIdeas() {
+  const result = await db
+    .select({
+      id: ideas.id,
+      title: ideas.title,
+      category: ideas.category,
+      likes: ideas.likes,
+      dislikes: ideas.dislikes,
+      status: ideas.status,
+      aiScore: ideas.aiScore,
+      pageNumber: ideas.pageNumber,
+      createdAt: ideas.createdAt,
+    })
+    .from(ideas)
+    .orderBy(desc(ideas.createdAt))
+    .limit(50);
+  
+  return result;
+}
 
-export default function IdeasPage() {
+// Map category to short code for display
+function getCategoryCode(category: string): string {
+  const codeMap: Record<string, string> = {
+    "payments": "PAY",
+    "lending": "LEND",
+    "investments": "INV",
+    "customer-experience": "CX",
+    "security": "SEC",
+    "open-banking": "API",
+    "sustainability": "ESG",
+    "other": "OTHER",
+    "Digital Banking": "DIGI",
+    "Payments & Transfers": "PAY",
+    "Wealth Management": "WEALTH",
+    "Lending & Credit": "LEND",
+    "Insurance": "INS",
+    "Fraud & Security": "SEC",
+    "Customer Experience": "CX",
+    "Internal Operations": "OPS",
+    "ESG & Sustainability": "ESG",
+  };
+  return codeMap[category] || category.substring(0, 4).toUpperCase();
+}
+
+export default async function IdeasPage() {
+  const ideasList = await getIdeas();
   return (
     <TeletextScreen>
       <TeletextHeader 
@@ -34,31 +72,42 @@ export default function IdeasPage() {
             </tr>
           </thead>
           <tbody>
-            {mockIdeas.map((idea) => (
-              <tr key={idea.id} className="hover:bg-teletext-cyan hover:bg-opacity-10 cursor-pointer">
-                <td className="tt-cyan">{idea.number}</td>
-                <td>
-                  <Link 
-                    href={`/ideas/${idea.id}`}
-                    className="tt-white hover:tt-yellow transition-colors"
-                  >
-                    {idea.title}
-                  </Link>
-                </td>
-                <td className="tt-green">{idea.category}</td>
-                <td>
-                  <StarRating rating={idea.rating} readonly />
-                </td>
-                <td>
-                  <Link 
-                    href={`/ideas/${idea.id}`}
-                    className="tt-cyan hover:tt-yellow"
-                  >
-                    {idea.pageNumber}
-                  </Link>
+            {ideasList.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="text-center tt-yellow py-8">
+                  ░░░ NU EXISTĂ IDEI ÎNCĂ ░░░
+                  <div className="mt-2 tt-cyan text-sm">Fii primul care adaugă o idee!</div>
                 </td>
               </tr>
-            ))}
+            ) : (
+              ideasList.map((idea, index) => (
+                <tr key={idea.id} className="hover:bg-teletext-cyan hover:bg-opacity-10 cursor-pointer">
+                  <td className="tt-cyan">{String(index + 1).padStart(3, '0')}</td>
+                  <td>
+                    <Link 
+                      href={`/ideas/${idea.id}`}
+                      className="tt-white hover:tt-yellow transition-colors"
+                    >
+                      {idea.title.length > 35 ? idea.title.substring(0, 35) + '...' : idea.title}
+                    </Link>
+                  </td>
+                  <td className="tt-green">{getCategoryCode(idea.category)}</td>
+                  <td>
+                    <span className="tt-green">▲{idea.likes || 0}</span>
+                    <span className="tt-white">/</span>
+                    <span className="tt-red">▼{idea.dislikes || 0}</span>
+                  </td>
+                  <td>
+                    <Link 
+                      href={`/ideas/${idea.id}`}
+                      className="tt-cyan hover:tt-yellow"
+                    >
+                      {idea.pageNumber || 100 + index}
+                    </Link>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
