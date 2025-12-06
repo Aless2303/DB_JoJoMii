@@ -1,1076 +1,907 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ro">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BANK//IDEAS - AI Pipeline Visualizer</title>
+    <title>BANK//IDEAS - AI Pipeline (11 Agents)</title>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
         :root {
-            --cyan: #00ffff;
-            --yellow: #ffff00;
-            --magenta: #ff00ff;
-            --green: #00ff00;
-            --red: #ff0000;
-            --white: #ffffff;
-            --bg-dark: #000033;
-            --bg-darker: #000022;
+            --bg: #0a0a1a;
+            --cyan: #00FFFF;
+            --yellow: #FFFF00;
+            --magenta: #FF00FF;
+            --green: #00FF00;
+            --red: #FF0000;
+            --white: #FFFFFF;
         }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'VT323', monospace;
-            background: var(--bg-dark);
+            background: var(--bg);
             color: var(--white);
             min-height: 100vh;
             overflow-x: auto;
-            position: relative;
-        }
-
-        /* Scanlines effect */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: repeating-linear-gradient(
-                0deg,
-                rgba(0, 0, 0, 0.15),
-                rgba(0, 0, 0, 0.15) 1px,
-                transparent 1px,
-                transparent 2px
-            );
-            pointer-events: none;
-            z-index: 1000;
-        }
-
-        /* CRT flicker */
-        body::after {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 255, 255, 0.02);
-            pointer-events: none;
-            z-index: 999;
-            animation: flicker 0.15s infinite;
-        }
-
-        @keyframes flicker {
-            0% { opacity: 0.97; }
-            50% { opacity: 1; }
-            100% { opacity: 0.98; }
         }
 
         /* Header */
         .header {
-            background: linear-gradient(180deg, var(--bg-darker) 0%, transparent 100%);
-            border-bottom: 3px double var(--cyan);
+            background: linear-gradient(90deg, #000080, #000066);
+            border-bottom: 4px solid var(--yellow);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 32px;
+            color: var(--cyan);
+            text-shadow: 0 0 20px var(--cyan);
+        }
+        .logo span { color: var(--yellow); }
+        .page-num {
+            background: var(--red);
+            padding: 8px 20px;
+            font-size: 24px;
+        }
+        .run-btn {
+            background: var(--green);
+            color: #000;
+            border: none;
             padding: 12px 30px;
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .run-btn:hover { box-shadow: 0 0 20px var(--green); }
+        .run-btn.running { background: var(--yellow); animation: blink 0.5s infinite; }
+        @keyframes blink { 50% { opacity: 0.7; } }
+
+        /* Main */
+        .main {
+            padding: 30px;
+            display: flex;
+            gap: 20px;
+        }
+
+        /* Pipeline */
+        .pipeline {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            flex: 1;
+            overflow-x: auto;
+            padding-bottom: 20px;
+        }
+
+        /* Stage */
+        .stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            min-width: 180px;
+        }
+        .stage-label {
+            color: var(--magenta);
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Parallel Box */
+        .parallel-box {
+            border: 2px dashed var(--magenta);
+            border-radius: 8px;
+            padding: 15px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+            background: rgba(255,0,255,0.05);
+        }
+        .parallel-box::before {
+            content: 'PARALLEL';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg);
+            color: var(--magenta);
+            padding: 0 10px;
+            font-size: 12px;
+        }
+
+        /* Node */
+        .node {
+            background: rgba(0,0,50,0.9);
+            border: 2px solid #444;
+            border-radius: 6px;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 170px;
+            text-align: center;
+        }
+        .node:hover {
+            border-color: var(--cyan);
+            box-shadow: 0 0 15px rgba(0,255,255,0.3);
+        }
+        .node.selected {
+            border-color: var(--yellow);
+            box-shadow: 0 0 20px rgba(255,255,0,0.4);
+        }
+        .node.running {
+            border-color: var(--yellow);
+            animation: pulse 0.8s infinite;
+        }
+        .node.done {
+            border-color: var(--green);
+            box-shadow: 0 0 15px rgba(0,255,0,0.4);
+        }
+        .node.done::after {
+            content: '✓';
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--green);
+            color: #000;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        @keyframes pulse { 50% { transform: scale(1.02); } }
+
+        .node-icon { font-size: 28px; margin-bottom: 8px; }
+        .node-title { font-size: 14px; color: var(--cyan); margin-bottom: 4px; }
+        .node-model { font-size: 12px; color: #888; }
+        .node-tag {
+            display: inline-block;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-top: 6px;
+        }
+        .tag-llm { background: rgba(0,255,255,0.2); color: var(--cyan); }
+        .tag-parallel { background: rgba(0,255,0,0.2); color: var(--green); }
+        .tag-seq { background: rgba(255,255,0,0.2); color: var(--yellow); }
+
+        /* Arrow */
+        .arrow {
+            color: var(--cyan);
+            font-size: 30px;
+            opacity: 0.4;
+            align-self: center;
+        }
+        .arrow.active { opacity: 1; color: var(--yellow); }
+        .arrow.done { opacity: 1; color: var(--green); }
+
+        /* Panel */
+        .panel {
+            width: 400px;
+            min-width: 400px;
+            background: rgba(0,0,50,0.95);
+            border: 2px solid var(--cyan);
+            border-radius: 8px;
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+            display: none;
+        }
+        .panel.open { display: block; }
+        .panel-header {
+            background: linear-gradient(90deg, #000080, #000066);
+            padding: 15px 20px;
+            border-bottom: 2px solid var(--cyan);
             display: flex;
             justify-content: space-between;
             align-items: center;
             position: sticky;
             top: 0;
-            z-index: 100;
         }
-
-        .logo {
-            font-size: 28px;
-            font-weight: bold;
-            color: var(--cyan);
-            text-shadow: 0 0 10px var(--cyan), 0 0 20px var(--cyan);
+        .panel-title { color: var(--cyan); font-size: 20px; }
+        .panel-close {
+            background: none;
+            border: 2px solid var(--red);
+            color: var(--red);
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        .panel-content { padding: 20px; }
+        .section { margin-bottom: 20px; }
+        .section-title {
+            color: var(--yellow);
+            font-size: 16px;
+            margin-bottom: 10px;
             letter-spacing: 2px;
         }
-
-        .logo span {
-            color: var(--yellow);
+        .section-title::before { content: '▶ '; color: var(--green); }
+        .info-card {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 10px;
         }
-
-        .page-number {
-            background: var(--red);
-            color: var(--white);
-            padding: 5px 15px;
-            font-size: 22px;
-            font-weight: bold;
-        }
-
-        .header-info {
-            color: var(--yellow);
-            font-size: 16px;
-            text-align: center;
-        }
-
-        /* Main container */
-        .main-container {
-            display: flex;
-            flex-direction: column;
-            min-height: calc(100vh - 130px);
-        }
-
-        /* Pipeline area */
-        .pipeline-area {
-            flex: 1;
-            padding: 30px;
-            position: relative;
-            overflow-x: auto;
-            overflow-y: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* Pipeline horizontal layout */
-        .pipeline-stages {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            position: relative;
-            z-index: 2;
-            min-width: max-content;
-            padding: 20px 0;
-        }
-
-        .stage-column {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .stage-label {
-            color: var(--magenta);
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .parallel-box {
-            background: rgba(255, 0, 255, 0.08);
-            border: 2px dashed var(--magenta);
-            border-radius: 10px;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            position: relative;
-        }
-
-        .parallel-box::before {
-            content: 'PARALLEL (Promise.all)';
-            position: absolute;
-            top: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--bg-dark);
-            color: var(--magenta);
-            padding: 0 8px;
-            font-size: 11px;
-            white-space: nowrap;
-        }
-
-        /* Arrow between stages */
-        .stage-arrow {
-            color: var(--cyan);
-            font-size: 32px;
-            opacity: 0.5;
-            margin: 0 5px;
-            transition: all 0.3s ease;
-        }
-
-        .stage-arrow.active {
-            color: var(--yellow);
-            opacity: 1;
-            text-shadow: 0 0 15px var(--yellow);
-            animation: arrow-pulse 0.5s infinite;
-        }
-
-        .stage-arrow.complete {
-            color: var(--green);
-            opacity: 1;
-            text-shadow: 0 0 10px var(--green);
-        }
-
-        @keyframes arrow-pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-        }
-
-        /* Node styles */
-        .node {
-            background: var(--bg-darker);
-            border: 2px solid var(--cyan);
-            border-radius: 6px;
-            padding: 12px 15px;
-            width: 160px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .node:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 20px rgba(0, 255, 255, 0.3);
-        }
-
-        .node.selected {
-            border-color: var(--yellow);
-            box-shadow: 0 0 15px var(--yellow), inset 0 0 15px rgba(255, 255, 0, 0.1);
-        }
-
-        .node.running {
-            border-color: var(--yellow);
-            animation: pulse 0.5s ease-in-out infinite;
-        }
-
-        .node.complete {
-            border-color: var(--green);
-            box-shadow: 0 0 10px var(--green);
-        }
-
-        @keyframes pulse {
-            0%, 100% { box-shadow: 0 0 5px var(--yellow); }
-            50% { box-shadow: 0 0 25px var(--yellow), 0 0 40px var(--yellow); }
-        }
-
-        .node-icon {
-            font-size: 24px;
-            text-align: center;
-            margin-bottom: 6px;
-        }
-
-        .node-title {
-            font-size: 13px;
-            color: var(--cyan);
-            text-align: center;
-            margin-bottom: 4px;
-            text-transform: uppercase;
-            line-height: 1.2;
-        }
-
-        .node-subtitle {
-            font-size: 11px;
-            color: var(--yellow);
-            text-align: center;
-            opacity: 0.8;
-        }
-
-        .node-phase {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: var(--magenta);
-            color: var(--white);
-            padding: 1px 6px;
-            font-size: 10px;
-            border-radius: 3px;
-        }
-
-        .node-status {
-            position: absolute;
-            bottom: -6px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 10px;
-            padding: 1px 8px;
-            border-radius: 8px;
-            background: var(--bg-darker);
-            border: 1px solid currentColor;
-            white-space: nowrap;
-        }
-
-        .node-status.waiting { color: #888; }
-        .node-status.running { color: var(--yellow); }
-        .node-status.complete { color: var(--green); }
-
-        .node.input-node {
-            border-color: var(--green);
-            background: linear-gradient(135deg, var(--bg-darker) 0%, rgba(0, 255, 0, 0.1) 100%);
-        }
-
-        .node.output-node {
-            border-color: var(--magenta);
-            background: linear-gradient(135deg, var(--bg-darker) 0%, rgba(255, 0, 255, 0.1) 100%);
-        }
-
-        /* Side panel (bottom) */
-        .side-panel {
-            width: 100%;
-            max-height: 0;
-            background: var(--bg-darker);
-            border-top: 3px solid var(--cyan);
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-
-        .side-panel.open {
-            max-height: 380px;
-            overflow-y: auto;
-        }
-
-        .panel-inner {
-            padding: 20px 30px;
-        }
-
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid var(--cyan);
-        }
-
-        .panel-title {
-            font-size: 22px;
-            color: var(--cyan);
-        }
-
-        .panel-close {
-            background: var(--red);
-            border: none;
-            color: var(--white);
-            font-family: 'VT323', monospace;
-            font-size: 18px;
-            padding: 4px 12px;
-            cursor: pointer;
-        }
-
-        .panel-content {
-            display: grid;
-            grid-template-columns: 1fr 1.5fr;
-            gap: 25px;
-        }
-
-        .panel-section {
-            margin-bottom: 15px;
-        }
-
-        .panel-section-title {
-            color: var(--yellow);
-            font-size: 16px;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .panel-section-title::before {
-            content: '►';
-            color: var(--magenta);
-        }
-
-        .code-block {
+        .info-card p { font-size: 15px; line-height: 1.6; color: #ccc; }
+        .code-box {
             background: #000;
             border: 1px solid var(--cyan);
             border-radius: 4px;
             padding: 12px;
             overflow-x: auto;
-            font-size: 12px;
-            line-height: 1.4;
-            max-height: 220px;
-            overflow-y: auto;
         }
-
-        .code-block code {
+        .code-box code {
+            font-size: 13px;
             color: var(--green);
-            white-space: pre;
+            white-space: pre-wrap;
         }
-
-        .info-list {
-            list-style: none;
-        }
-
-        .info-list li {
-            padding: 6px 0;
-            border-bottom: 1px dashed rgba(0, 255, 255, 0.3);
+        .detail-row {
             display: flex;
             justify-content: space-between;
-            font-size: 14px;
+            padding: 8px 0;
+            border-bottom: 1px solid #222;
         }
+        .detail-label { color: #888; }
+        .detail-value { color: var(--cyan); }
 
-        .info-list li:last-child {
-            border-bottom: none;
-        }
-
-        .info-label { color: var(--cyan); }
-        .info-value { color: var(--yellow); }
-
-        .panel-description {
-            color: var(--white);
-            line-height: 1.5;
-            font-size: 14px;
-            margin-bottom: 15px;
-        }
-
-        /* Footer */
-        .footer {
-            background: var(--bg-darker);
-            border-top: 3px double var(--cyan);
-            padding: 10px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            bottom: 0;
-            z-index: 100;
-        }
-
-        .run-button {
-            background: linear-gradient(180deg, var(--green) 0%, #009900 100%);
-            border: 2px solid var(--green);
-            color: var(--bg-dark);
-            font-family: 'VT323', monospace;
-            font-size: 20px;
-            padding: 8px 25px;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: all 0.3s ease;
-        }
-
-        .run-button:hover {
-            box-shadow: 0 0 15px var(--green);
-            transform: scale(1.05);
-        }
-
-        .run-button:disabled {
-            background: #333;
-            border-color: #666;
-            color: #666;
-            cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
-        }
-
-        .run-button.running {
-            background: linear-gradient(180deg, var(--yellow) 0%, #999900 100%);
-            border-color: var(--yellow);
-            animation: button-pulse 1s infinite;
-        }
-
-        @keyframes button-pulse {
-            0%, 100% { box-shadow: 0 0 5px var(--yellow); }
-            50% { box-shadow: 0 0 20px var(--yellow); }
-        }
-
-        .progress-container {
-            flex: 1;
-            margin: 0 25px;
-            max-width: 500px;
-        }
-
-        .progress-label {
-            color: var(--cyan);
-            font-size: 12px;
-            margin-bottom: 4px;
-            display: flex;
-            justify-content: space-between;
-        }
-
+        /* Progress */
         .progress-bar {
-            height: 16px;
-            background: var(--bg-dark);
-            border: 2px solid var(--cyan);
-            border-radius: 3px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,50,0.95);
+            border-top: 2px solid var(--yellow);
+            padding: 15px 30px;
+            display: none;
+        }
+        .progress-bar.visible { display: block; }
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .progress-title { color: var(--cyan); font-size: 18px; }
+        .progress-status { color: var(--yellow); }
+        .progress-track {
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
             overflow: hidden;
         }
-
         .progress-fill {
             height: 100%;
+            background: linear-gradient(90deg, var(--magenta), var(--cyan), var(--green));
             width: 0%;
-            background: linear-gradient(90deg, var(--cyan), var(--green));
-            transition: width 0.5s ease;
-        }
-
-        .status-text {
-            color: var(--yellow);
-            font-size: 16px;
-            min-width: 180px;
-            text-align: right;
-        }
-
-        .reset-button {
-            background: transparent;
-            border: 2px solid var(--red);
-            color: var(--red);
-            font-family: 'VT323', monospace;
-            font-size: 16px;
-            padding: 6px 15px;
-            cursor: pointer;
-            margin-left: 10px;
-        }
-
-        .reset-button:hover {
-            background: var(--red);
-            color: var(--white);
-        }
-
-        @media (max-width: 1100px) {
-            .panel-content {
-                grid-template-columns: 1fr;
-            }
+            transition: width 0.3s;
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
         <div class="logo">BANK//<span>IDEAS</span></div>
-        <div class="header-info">
-            AI AGENT PIPELINE VISUALIZER • <span style="color: var(--cyan);">Vercel AI SDK + GPT-4o-mini</span>
-        </div>
-        <div class="page-number">P.500</div>
+        <div style="color: var(--yellow);">AI PIPELINE · 11 AGENTS · VERCEL AI SDK</div>
+        <div class="page-num">P.500</div>
+        <button class="run-btn" id="runBtn" onclick="runPipeline()">▶ RUN PIPELINE</button>
     </header>
 
-    <!-- Main Container -->
-    <div class="main-container">
-        <!-- Pipeline Area -->
-        <div class="pipeline-area">
-            <div class="pipeline-stages" id="pipelineStages">
-                <!-- INPUT -->
-                <div class="stage-column">
-                    <div class="stage-label">Input</div>
-                    <div class="node input-node" data-node="input" data-stage="0">
-                        <div class="node-icon">📝</div>
-                        <div class="node-title">Form Input</div>
-                        <div class="node-subtitle">7-Step Form</div>
-                        <div class="node-phase">START</div>
-                        <div class="node-status waiting">WAITING</div>
+    <div class="main">
+        <div class="pipeline" id="pipeline">
+            <!-- INPUT -->
+            <div class="stage">
+                <div class="stage-label">INPUT</div>
+                <div class="node" data-id="input" onclick="showPanel('input')">
+                    <div class="node-icon">📝</div>
+                    <div class="node-title">FORM INPUT</div>
+                    <div class="node-model">7-Step Form</div>
+                    <span class="node-tag tag-llm">Zod</span>
+                </div>
+            </div>
+            <div class="arrow" data-arrow="0">→</div>
+
+            <!-- VALIDATOR -->
+            <div class="stage">
+                <div class="stage-label">STEP 1</div>
+                <div class="node" data-id="validator" onclick="showPanel('validator')">
+                    <div class="node-icon">✅</div>
+                    <div class="node-title">VALIDATOR</div>
+                    <div class="node-model">claude-3-haiku</div>
+                    <span class="node-tag tag-seq">Sequential</span>
+                </div>
+            </div>
+            <div class="arrow" data-arrow="1">→</div>
+
+            <!-- PARALLEL ANALYZERS -->
+            <div class="stage">
+                <div class="stage-label">STEP 2</div>
+                <div class="parallel-box">
+                    <div class="node" data-id="basic" onclick="showPanel('basic')">
+                        <div class="node-icon">📋</div>
+                        <div class="node-title">BASIC INFO</div>
+                        <div class="node-model">claude-3-haiku</div>
+                        <span class="node-tag tag-parallel">Parallel</span>
+                    </div>
+                    <div class="node" data-id="tech" onclick="showPanel('tech')">
+                        <div class="node-icon">⚡</div>
+                        <div class="node-title">TECHNOLOGIES</div>
+                        <div class="node-model">claude-3-haiku</div>
+                        <span class="node-tag tag-parallel">Parallel</span>
+                    </div>
+                    <div class="node" data-id="business" onclick="showPanel('business')">
+                        <div class="node-icon">💼</div>
+                        <div class="node-title">BUSINESS CTX</div>
+                        <div class="node-model">claude-3-haiku</div>
+                        <span class="node-tag tag-parallel">Parallel</span>
+                    </div>
+                    <div class="node" data-id="regulations" onclick="showPanel('regulations')">
+                        <div class="node-icon">⚖️</div>
+                        <div class="node-title">REGULATIONS</div>
+                        <div class="node-model">claude-3-haiku</div>
+                        <span class="node-tag tag-parallel">Parallel</span>
+                    </div>
+                    <div class="node" data-id="differentiators" onclick="showPanel('differentiators')">
+                        <div class="node-icon">🎯</div>
+                        <div class="node-title">DIFFERENTIATORS</div>
+                        <div class="node-model">claude-3-haiku</div>
+                        <span class="node-tag tag-parallel">Parallel</span>
+                    </div>
+                    <div class="node" data-id="other" onclick="showPanel('other')">
+                        <div class="node-icon">📎</div>
+                        <div class="node-title">OTHER DETAILS</div>
+                        <div class="node-model">claude-3-haiku</div>
+                        <span class="node-tag tag-parallel">Parallel</span>
                     </div>
                 </div>
+            </div>
+            <div class="arrow" data-arrow="2">→</div>
 
-                <div class="stage-arrow" data-arrow="0">→</div>
-
-                <!-- PHASE 1 -->
-                <div class="stage-column">
-                    <div class="stage-label">Phase 1</div>
-                    <div class="node" data-node="analyzer" data-stage="1">
-                        <div class="node-icon">🔍</div>
-                        <div class="node-title">Content Analyzer</div>
-                        <div class="node-subtitle">gpt-4o-mini</div>
-                        <div class="node-phase">ANALYZE</div>
-                        <div class="node-status waiting">WAITING</div>
-                    </div>
+            <!-- AGGREGATOR -->
+            <div class="stage">
+                <div class="stage-label">STEP 3</div>
+                <div class="node" data-id="aggregator" onclick="showPanel('aggregator')">
+                    <div class="node-icon">🔀</div>
+                    <div class="node-title">AGGREGATOR</div>
+                    <div class="node-model">Pure Function</div>
+                    <span class="node-tag tag-seq">Merge</span>
                 </div>
+            </div>
+            <div class="arrow" data-arrow="3">→</div>
 
-                <div class="stage-arrow" data-arrow="1">→</div>
-
-                <!-- PHASE 2 - PARALLEL -->
-                <div class="stage-column">
-                    <div class="stage-label">Phase 2</div>
-                    <div class="parallel-box">
-                        <div class="node" data-node="designer" data-stage="2">
-                            <div class="node-icon">🎨</div>
-                            <div class="node-title">Page Designer</div>
-                            <div class="node-subtitle">PageStructureSchema</div>
-                            <div class="node-phase">2A</div>
-                            <div class="node-status waiting">WAITING</div>
-                        </div>
-                        <div class="node" data-node="ascii" data-stage="2">
-                            <div class="node-icon">▓░▒</div>
-                            <div class="node-title">ASCII Art Gen</div>
-                            <div class="node-subtitle">ASCIIElementsSchema</div>
-                            <div class="node-phase">2B</div>
-                            <div class="node-status waiting">WAITING</div>
-                        </div>
-                        <div class="node" data-node="copywriter" data-stage="2">
-                            <div class="node-icon">✍️</div>
-                            <div class="node-title">Teletext Copy</div>
-                            <div class="node-subtitle">40 char/line max</div>
-                            <div class="node-phase">2C</div>
-                            <div class="node-status waiting">WAITING</div>
-                        </div>
-                    </div>
+            <!-- HTML BUILDER -->
+            <div class="stage">
+                <div class="stage-label">STEP 4</div>
+                <div class="node" data-id="htmlbuilder" onclick="showPanel('htmlbuilder')">
+                    <div class="node-icon">🏗️</div>
+                    <div class="node-title">HTML BUILDER</div>
+                    <div class="node-model">claude-3-haiku</div>
+                    <span class="node-tag tag-llm">LLM</span>
                 </div>
+            </div>
+            <div class="arrow" data-arrow="4">→</div>
 
-                <div class="stage-arrow" data-arrow="2">→</div>
-
-                <!-- PHASE 3 -->
-                <div class="stage-column">
-                    <div class="stage-label">Phase 3</div>
-                    <div class="node" data-node="renderer" data-stage="3">
-                        <div class="node-icon">⚙️</div>
-                        <div class="node-title">Page Renderer</div>
-                        <div class="node-subtitle">HTML/CSS Assembly</div>
-                        <div class="node-phase">RENDER</div>
-                        <div class="node-status waiting">WAITING</div>
-                    </div>
+            <!-- STATISTICIAN -->
+            <div class="stage">
+                <div class="stage-label">STEP 5</div>
+                <div class="node" data-id="statistician" onclick="showPanel('statistician')">
+                    <div class="node-icon">📊</div>
+                    <div class="node-title">STATISTICIAN</div>
+                    <div class="node-model">claude-3-haiku</div>
+                    <span class="node-tag tag-llm">Scoring</span>
                 </div>
+            </div>
+            <div class="arrow" data-arrow="5">→</div>
 
-                <div class="stage-arrow" data-arrow="3">→</div>
+            <!-- VISUAL DESIGNER -->
+            <div class="stage">
+                <div class="stage-label">STEP 6</div>
+                <div class="node" data-id="visual" onclick="showPanel('visual')">
+                    <div class="node-icon">🎨</div>
+                    <div class="node-title">VISUAL DESIGNER</div>
+                    <div class="node-model">Pure Function</div>
+                    <span class="node-tag tag-seq">HTML Gen</span>
+                </div>
+            </div>
+            <div class="arrow" data-arrow="6">→</div>
 
-                <!-- OUTPUT -->
-                <div class="stage-column">
-                    <div class="stage-label">Output</div>
-                    <div class="node output-node" data-node="output" data-stage="4">
-                        <div class="node-icon">📺</div>
-                        <div class="node-title">Teletext Pages</div>
-                        <div class="node-subtitle">P.100, P.101...</div>
-                        <div class="node-phase">END</div>
-                        <div class="node-status waiting">WAITING</div>
-                    </div>
+            <!-- OUTPUT -->
+            <div class="stage">
+                <div class="stage-label">OUTPUT</div>
+                <div class="node" data-id="output" onclick="showPanel('output')">
+                    <div class="node-icon">📺</div>
+                    <div class="node-title">TELETEXT PAGE</div>
+                    <div class="node-model">PostgreSQL</div>
+                    <span class="node-tag tag-seq">Final</span>
                 </div>
             </div>
         </div>
 
         <!-- Side Panel -->
-        <div class="side-panel" id="sidePanel">
-            <div class="panel-inner">
-                <div class="panel-header">
-                    <div class="panel-title" id="panelTitle">Node Details</div>
-                    <button class="panel-close" onclick="closePanel()">✕ CLOSE</button>
-                </div>
-                <div class="panel-content" id="panelContent"></div>
+        <div class="panel" id="panel">
+            <div class="panel-header">
+                <span class="panel-title" id="panelTitle">Agent Details</span>
+                <button class="panel-close" onclick="closePanel()">×</button>
             </div>
+            <div class="panel-content" id="panelContent"></div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <button class="run-button" id="runButton" onclick="runPipeline()">▶ RUN PIPELINE</button>
-        <div class="progress-container">
-            <div class="progress-label">
-                <span>PIPELINE PROGRESS</span>
-                <span id="progressPercent">0%</span>
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
-            </div>
+    <!-- Progress Bar -->
+    <div class="progress-bar" id="progressBar">
+        <div class="progress-header">
+            <span class="progress-title">🚀 RUNNING PIPELINE...</span>
+            <span class="progress-status" id="progressStatus">Initializing...</span>
         </div>
-        <div class="status-text" id="statusText">READY TO START</div>
-        <button class="reset-button" onclick="resetPipeline()">↺ RESET</button>
-    </footer>
+        <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+    </div>
 
     <script>
-        const nodeData = {
+        const agents = {
             input: {
-                title: 'FORM INPUT',
-                description: '7-step form collecting idea details with comprehensive Zod validation. Each step focuses on a different aspect of the banking innovation idea.',
-                schema: `const IdeaFormSchema = z.object({
+                title: '📝 FORM INPUT (7 Steps)',
+                desc: 'Formularul cu 7 pași care colectează toate informațiile despre idee de la utilizator.',
+                schema: `IdeaFormSchema = z.object({
   // Step 1: Basic Info
   title: z.string().min(5).max(100),
-  shortDescription: z.string().min(20).max(500),
-  category: z.enum([
-    'Customer Experience',
-    'Internal Operations',
-    'Digital Products',
-    'Sustainability',
-    'Security & Compliance'
-  ]),
-  problemSolved: z.string().min(50),
-
+  shortDescription: z.string(),
+  category: z.enum([...]),
+  problemSolved: z.string(),
+  
   // Step 2: Technologies
-  technologies: z.array(z.string()),
-  solutionType: z.string(),
-  techStack: z.string().optional(),
-
-  // Step 3: Business Context
+  aiTechnologies: z.array(z.string()),
+  blockchainTechnologies: z.array(z.string()),
+  otherTechnologies: z.array(z.string()),
+  
+  // Step 3: Solution Type
+  platform: z.string(),
+  
+  // Step 4: Business Context
   targetSegment: z.string(),
   monetizationModel: z.string(),
-
-  // Step 4: Regulations
+  
+  // Step 5: Regulations
   regulations: z.array(z.string()),
   complianceNotes: z.string().optional(),
-
-  // Step 5: Differentiators
-  uniqueValue: z.string().min(50),
-  projectStage: z.string(),
+  
+  // Step 6: Differentiators
+  uniqueValue: z.string(),
   githubLink: z.string().url().optional(),
-
-  // Step 6: Additional
+  
+  // Step 7: Other
   team: z.string().optional(),
   additionalNotes: z.string().optional()
 });`,
                 details: [
-                    { label: 'Steps', value: '7 sections' },
-                    { label: 'Validation', value: 'Zod Schema' },
-                    { label: 'Required', value: '12 fields' },
-                    { label: 'Optional', value: '8 fields' }
+                    ['Steps', '7 sections'],
+                    ['Required Fields', '12'],
+                    ['Validation', 'Zod + React Hook Form'],
+                    ['Storage', 'PostgreSQL']
                 ]
             },
-            analyzer: {
-                title: 'CONTENT ANALYZER AGENT',
-                description: 'Analyzes form input using GPT-4o-mini and extracts key themes, sentiment, and categories for intelligent page generation.',
-                schema: `const ContentAnalysisSchema = z.object({
-  mainTheme: z.string(),
-  subThemes: z.array(z.string()).max(5),
-  sentiment: z.enum([
-    'innovative', 'practical', 
-    'disruptive', 'incremental'
-  ]),
-  
-  primaryCategory: z.string(),
-  targetAudience: z.array(z.string()),
-  keyBenefits: z.array(z.string()).max(6),
-  
-  technicalComplexity: z.enum([
-    'low', 'medium', 'high'
-  ]),
-  
-  suggestedPages: z.number().min(2).max(5),
-  contentBlocks: z.array(z.object({
-    type: z.enum(['header', 'body', 'list', 'stats']),
-    priority: z.number(),
-    content: z.string()
-  }))
+            validator: {
+                title: '✅ VALIDATOR AGENT',
+                desc: 'Validează, normalizează și ÎMBOGĂȚEȘTE datele brute. Completează câmpuri lipsă cu valori inteligente deduse din context.',
+                schema: `ValidatedIdeaSchema = z.object({
+  ideaTitle: z.string(),
+  bigIdea: z.string(),
+  mainCategory: z.string(),
+  problemSolved: z.string(),
+  coreTechnologies: z.array(z.string()),
+  solutionType: z.string(),
+  targetSegment: z.string(),
+  monetizationModel: z.string(),
+  applicableRegulations: z.array(z.string()),
+  uniqueValue: z.string(),
+  projectStage: z.string(),
+  implementationLevel: z.array(z.string()),
+  githubLink: z.string().nullable(),
+  teamComposition: z.string(),
+  // ... more fields
 });`,
-                code: `import { generateObject } from 'ai';
-import { openai } from '@ai-sdk/openai';
-
-const { object: analysis } = await generateObject({
-  model: openai('gpt-4o-mini'),
-  schema: ContentAnalysisSchema,
-  prompt: \`Analyze this banking idea:
-Title: \${idea.title}
-Description: \${idea.shortDescription}\`
+                code: `const { object } = await generateObject({
+  model: anthropic("claude-3-haiku-20240307"),
+  schema: ValidatedIdeaSchema,
+  prompt: \`Validează și îmbogățește datele...\`
 });`,
                 details: [
-                    { label: 'Model', value: 'gpt-4o-mini' },
-                    { label: 'Method', value: 'generateObject()' },
-                    { label: 'Temperature', value: '0.7' },
-                    { label: 'Tokens', value: '~1000' }
+                    ['Model', 'claude-3-haiku'],
+                    ['Method', 'generateObject()'],
+                    ['Role', 'DATA ANALYST'],
+                    ['Execution', 'SEQUENTIAL']
                 ]
             },
-            designer: {
-                title: 'PAGE DESIGNER AGENT',
-                description: 'Creates page layout structure optimized for Teletext grid (40×25). Runs in PARALLEL.',
-                schema: `const PageStructureSchema = z.object({
-  pages: z.array(z.object({
-    pageNumber: z.number(),
-    title: z.string().max(40),
-    layout: z.enum([
-      'single-column',
-      'two-column',
-      'header-body-footer'
-    ]),
-    sections: z.array(z.object({
-      type: z.enum(['header', 'body', 'list', 'box']),
-      row: z.number().min(1).max(25),
-      col: z.number().min(1).max(40),
-      width: z.number().max(40),
-      color: z.enum(['cyan', 'yellow', 'magenta', 'green']),
-      content: z.string()
-    })),
-    navigation: z.object({
-      prev: z.number().optional(),
-      next: z.number().optional()
-    })
-  }))
+            basic: {
+                title: '📋 BASIC INFO ANALYZER',
+                desc: 'Analizează informațiile de bază și creează headline, tagline, beneficii cheie și audiență țintă.',
+                schema: `BasicInfoAnalysisSchema = z.object({
+  headline: z.string(),
+  tagline: z.string(),
+  category: z.string(),
+  problemSummary: z.string(),
+  keyBenefits: z.array(z.string()),
+  targetAudience: z.string()
+});`,
+                code: `// Runs in PARALLEL with other analyzers
+const [basic, tech, business, ...] = await Promise.all([
+  analyzeBasicInfo(validatedData),
+  analyzeTechnologies(validatedData),
+  analyzeBusinessContext(validatedData),
+  // ...
+]);`,
+                details: [
+                    ['Model', 'claude-3-haiku'],
+                    ['Role', 'MARKETING COPYWRITER'],
+                    ['Output', 'Headlines + Benefits'],
+                    ['Execution', 'PARALLEL']
+                ]
+            },
+            tech: {
+                title: '⚡ TECHNOLOGIES ANALYZER',
+                desc: 'Evaluează stack-ul tehnologic, nivelul de inovație și creează un sumar tehnic accesibil.',
+                schema: `TechnologiesAnalysisSchema = z.object({
+  primaryTech: z.array(z.string()),
+  techCategory: z.string(),
+  innovationLevel: z.string(),  // "cutting-edge" | "modern" | "standard"
+  techSummary: z.string(),
+  techBadges: z.array(z.string())
 });`,
                 details: [
-                    { label: 'Grid', value: '40×25 chars' },
-                    { label: 'Colors', value: '6 Teletext' },
-                    { label: 'Layouts', value: '3 templates' },
-                    { label: 'Execution', value: 'PARALLEL' }
+                    ['Model', 'claude-3-haiku'],
+                    ['Role', 'CTO / Tech Expert'],
+                    ['Evaluates', 'Innovation Level'],
+                    ['Execution', 'PARALLEL']
                 ]
             },
-            ascii: {
-                title: 'ASCII ART GENERATOR',
-                description: 'Generates ASCII art elements, borders, and decorations for authentic Teletext visual appeal.',
-                schema: `const ASCIIElementsSchema = z.object({
-  elements: z.array(z.object({
-    name: z.string(),
-    type: z.enum(['logo', 'border', 'icon', 'divider']),
-    art: z.array(z.string().max(40)),
-    width: z.number().max(40),
-    height: z.number().max(10)
-  })),
-  borders: z.object({
-    topLeft: z.string().length(1),
-    topRight: z.string().length(1),
-    bottomLeft: z.string().length(1),
-    bottomRight: z.string().length(1),
-    horizontal: z.string().length(1),
-    vertical: z.string().length(1)
-  })
+            business: {
+                title: '💼 BUSINESS CONTEXT ANALYZER',
+                desc: 'Analizează modelul de business, oportunitatea de piață, scalabilitate și valoarea pentru bancă.',
+                schema: `BusinessContextAnalysisSchema = z.object({
+  segment: z.string(),
+  revenueModel: z.string(),
+  marketOpportunity: z.string(),
+  businessValue: z.string(),
+  scalabilityScore: z.string()
 });`,
-                code: `// Generated ASCII Art:
-╔══════════════════════════════════╗
-║  ██████╗  █████╗ ███╗   ██╗██╗  ║
-║  ██╔══██╗██╔══██╗████╗  ██║██║  ║
-║  ██████╔╝███████║██╔██╗ ██║█████║
-║  ██╔══██╗██╔══██║██║╚██╗██║██╔═╝║
-║  ██████╔╝██║  ██║██║ ╚████║██║  ║
-╚══════════════════════════════════╝
-
-// Symbols: ★ ● ▶ ■ █ ░ ▒ ▓`,
                 details: [
-                    { label: 'Max Width', value: '40 chars' },
-                    { label: 'Max Height', value: '10 lines' },
-                    { label: 'Char Set', value: 'Box Drawing' },
-                    { label: 'Execution', value: 'PARALLEL' }
+                    ['Model', 'claude-3-haiku'],
+                    ['Role', 'BUSINESS STRATEGIST'],
+                    ['Output', 'Market Analysis'],
+                    ['Execution', 'PARALLEL']
                 ]
             },
-            copywriter: {
-                title: 'TELETEXT COPYWRITER',
-                description: 'Writes concise copy optimized for 40-character line width with authentic Teletext style.',
-                schema: `const TeletextCopySchema = z.object({
-  pages: z.array(z.object({
-    pageNumber: z.number(),
-    headline: z.string().max(40),
-    subheadline: z.string().max(40).optional(),
-    bodyBlocks: z.array(z.object({
-      text: z.array(z.string().max(40)),
-      style: z.enum(['normal', 'highlight'])
-    })),
-    bulletPoints: z.array(z.string().max(38)),
-    callToAction: z.string().max(40).optional()
-  })),
-  metadata: z.object({
-    wordCount: z.number(),
-    tone: z.enum(['professional', 'innovative'])
-  })
+            regulations: {
+                title: '⚖️ REGULATIONS ANALYZER',
+                desc: 'Evaluează conformitatea cu GDPR, PSD2, DORA și alte reglementări bancare. Identifică riscuri și oferă recomandări.',
+                schema: `RegulationsAnalysisSchema = z.object({
+  complianceStatus: z.string(),  // "compliant" | "partial" | "needs-work"
+  keyRegulations: z.array(z.string()),
+  riskLevel: z.string(),  // "low" | "medium" | "high"
+  complianceSummary: z.string()
 });`,
-                code: `// Teletext Copy Rules:
-// • Max 40 characters per line
-// • UPPERCASE for headers
-// • Short sentences
-
-// Example:
-"REVOLUTIONARY AI-POWERED BANKING"
-"────────────────────────────────"
-"Transform your financial future"
-""
-"★ 24/7 Intelligent Support"
-"★ Real-time Fraud Detection"`,
                 details: [
-                    { label: 'Max Line', value: '40 chars' },
-                    { label: 'Tone', value: 'Professional' },
-                    { label: 'Style', value: 'Teletext Classic' },
-                    { label: 'Execution', value: 'PARALLEL' }
+                    ['Model', 'claude-3-haiku'],
+                    ['Role', 'COMPLIANCE OFFICER'],
+                    ['Checks', 'GDPR, PSD2, DORA, AML'],
+                    ['Execution', 'PARALLEL']
                 ]
             },
-            renderer: {
-                title: 'PAGE RENDERER AGENT',
-                description: 'Assembles final HTML/CSS pages from Phase 2 outputs. Runs SEQUENTIALLY after all parallel agents complete.',
-                schema: `const RenderedPageSchema = z.object({
-  pages: z.array(z.object({
-    pageNumber: z.number(),
-    html: z.string(),
-    css: z.string().optional(),
-    metadata: z.object({
+            differentiators: {
+                title: '🎯 DIFFERENTIATORS ANALYZER',
+                desc: 'Identifică USP (Unique Selling Point), avantaj competitiv și nivelul de pregătire pentru producție.',
+                schema: `DifferentiatorsAnalysisSchema = z.object({
+  uniqueSellingPoint: z.string(),
+  competitiveAdvantage: z.string(),
+  readinessLevel: z.string(),  // "concept" | "prototype" | "mvp" | "production"
+  implementationBadges: z.array(z.string()),
+  githubAvailable: z.boolean()
+});`,
+                details: [
+                    ['Model', 'claude-3-haiku'],
+                    ['Role', 'PRODUCT STRATEGIST'],
+                    ['Output', 'USP + Readiness'],
+                    ['Execution', 'PARALLEL']
+                ]
+            },
+            other: {
+                title: '📎 OTHER DETAILS ANALYZER',
+                desc: 'Analizează informații despre echipă, demo disponibil, suport necesar și alte evidențieri.',
+                schema: `OtherDetailsAnalysisSchema = z.object({
+  teamSize: z.string(),
+  hasDemo: z.boolean(),
+  supportNeeded: z.array(z.string()),
+  additionalHighlights: z.array(z.string())
+});`,
+                details: [
+                    ['Model', 'claude-3-haiku'],
+                    ['Role', 'PROJECT MANAGER'],
+                    ['Output', 'Team + Resources'],
+                    ['Execution', 'PARALLEL']
+                ]
+            },
+            aggregator: {
+                title: '🔀 AGGREGATOR',
+                desc: 'Funcție PURĂ (fără LLM) care combină toate analizele într-un singur obiect structurat.',
+                schema: `AggregatedDataSchema = z.object({
+  basicInfo: BasicInfoAnalysisSchema,
+  technologies: TechnologiesAnalysisSchema,
+  businessContext: BusinessContextAnalysisSchema,
+  regulations: RegulationsAnalysisSchema,
+  differentiators: DifferentiatorsAnalysisSchema,
+  otherDetails: OtherDetailsAnalysisSchema,
+  originalData: ValidatedIdeaSchema
+});`,
+                code: `// Pure function - NO LLM call
+export function aggregateAnalyses(
+  validatedData,
+  basicInfo,
+  technologies,
+  businessContext,
+  regulations,
+  differentiators,
+  otherDetails
+): AggregatedData {
+  return {
+    basicInfo,
+    technologies,
+    businessContext,
+    regulations,
+    differentiators,
+    otherDetails,
+    originalData: validatedData
+  };
+}`,
+                details: [
+                    ['Type', 'Pure Function'],
+                    ['LLM', 'NO - Zero cost'],
+                    ['Purpose', 'Merge all analyses'],
+                    ['Execution', 'Instant']
+                ]
+            },
+            htmlbuilder: {
+                title: '🏗️ HTML BUILDER AGENT',
+                desc: 'Content Strategist care creează structura de conținut pentru a VINDE ideea către decision makers.',
+                schema: `HTMLBuilderOutputSchema = z.object({
+  pageTitle: z.string(),
+  sections: z.array(z.object({
+    id: z.string(),
+    type: z.string(),
+    content: z.object({
       title: z.string(),
-      generatedAt: z.string()
-    }),
-    validation: z.object({
-      isValid: z.boolean(),
-      errors: z.array(z.string())
+      subtitle: z.string().optional(),
+      items: z.array(z.string()).optional(),
+      badges: z.array(z.string()).optional(),
+      highlight: z.string().optional()
     })
-  }))
-});`,
-                code: `// Sequential - Waits for Phase 2
-const [structure, ascii, copy] = 
-  await Promise.all([
-    pageDesignerAgent(analysis),
-    asciiArtAgent(analysis),
-    copywriterAgent(analysis)
-  ]);
-
-// Phase 3: Render
-const rendered = await generateObject({
-  model: openai('gpt-4o-mini'),
-  schema: RenderedPageSchema,
-  prompt: \`Assemble Teletext pages from:
-STRUCTURE: \${JSON.stringify(structure)}
-ASCII: \${JSON.stringify(ascii)}
-COPY: \${JSON.stringify(copy)}\`
+  })),
+  callToAction: z.object({
+    primary: z.string(),
+    secondary: z.string().optional()
+  }),
+  metadata: z.object({
+    category: z.string(),
+    readinessLevel: z.string(),
+    innovationLevel: z.string()
+  })
 });`,
                 details: [
-                    { label: 'Execution', value: 'SEQUENTIAL' },
-                    { label: 'Waits For', value: 'All Phase 2' },
-                    { label: 'Output', value: 'HTML + CSS' },
-                    { label: 'Storage', value: 'PostgreSQL' }
+                    ['Model', 'claude-3-haiku'],
+                    ['Role', 'CONTENT STRATEGIST'],
+                    ['Output', 'Page Structure + CTAs'],
+                    ['Sections', '5-7 per page']
+                ]
+            },
+            statistician: {
+                title: '📊 STATISTICIAN AGENT',
+                desc: 'Investment Committee Member care evaluează ideea pe 5 axe: Innovation, Feasibility, Business Value, Compliance, Readiness.',
+                schema: `StatisticsOutputSchema = z.object({
+  overallScore: z.number(),  // 0-100
+  categoryScores: z.object({
+    innovation: z.number(),
+    feasibility: z.number(),
+    businessValue: z.number(),
+    compliance: z.number(),
+    readiness: z.number()
+  }),
+  strengths: z.array(z.string()),
+  improvements: z.array(z.string()),
+  recommendation: z.enum([
+    "STRONG_YES", "YES", "MAYBE", "NO", "STRONG_NO"
+  ]),
+  summaryText: z.string()
+});`,
+                details: [
+                    ['Model', 'claude-3-haiku'],
+                    ['Role', 'INVESTMENT COMMITTEE'],
+                    ['Scores', '5 axes (0-100)'],
+                    ['Output', 'Verdict + Recommendations']
+                ]
+            },
+            visual: {
+                title: '🎨 VISUAL DESIGNER',
+                desc: 'Funcție PURĂ care generează HTML-ul final în stil TELETEXT cu toate datele agregate și scorurile.',
+                code: `// Pure function - generates full HTML
+export function designVisualOutput(
+  data: AggregatedData,
+  htmlContent: HTMLBuilderOutput,
+  statistics: StatisticsOutput,
+  originalTitle: string
+): VisualOutput {
+  
+  const html = \`
+    <div style="background:#0a0a2e;color:#fff;...">
+      <!-- HEADER -->
+      <!-- HERO SECTION -->
+      <!-- TECH STACK -->
+      <!-- BUSINESS CONTEXT -->
+      <!-- SCORES with Progress Bars -->
+      <!-- STRENGTHS & IMPROVEMENTS -->
+      <!-- COMPLIANCE STATUS -->
+      <!-- FOOTER -->
+    </div>
+  \`;
+  
+  return { pages: [...], htmlOutput: html };
+}`,
+                details: [
+                    ['Type', 'Pure Function'],
+                    ['LLM', 'NO - Zero cost'],
+                    ['Output', 'Full HTML Page'],
+                    ['Style', 'Teletext/Retro']
                 ]
             },
             output: {
-                title: 'TELETEXT PAGES OUTPUT',
-                description: 'Final generated Teletext-style pages stored in PostgreSQL and accessible via page viewer.',
-                schema: `// Generated Pages
-{
-  "pages": [
-    { "pageNumber": 100, "title": "OVERVIEW" },
-    { "pageNumber": 101, "title": "PROBLEM" },
-    { "pageNumber": 102, "title": "TECH STACK" },
-    { "pageNumber": 103, "title": "BUSINESS" }
-  ]
+                title: '📺 TELETEXT OUTPUT',
+                desc: 'Pagina finală generată, salvată în PostgreSQL și afișată utilizatorului cu design Teletext retro.',
+                schema: `PipelineResult = {
+  success: boolean,
+  validatedData: ValidatedIdea,
+  aggregatedAnalysis: AggregatedData,
+  statistics: StatisticsOutput,
+  visualOutput: {
+    pages: TeletextPage[],
+    htmlOutput: string,
+    cssVariables: { primaryColor, accentColor }
+  }
 }`,
-                code: `// Page Viewer
-<TeletextViewer 
-  pages={idea.generatedPages}
-  initialPage={100}
-/>
-
-// URLs
-/ideas/[id]/page/100  → Overview
-/ideas/[id]/page/101  → Problem
-/ideas/[id]/page/102  → Tech
-/ideas/[id]/page/103  → Business`,
                 details: [
-                    { label: 'Pages', value: '2-5 per idea' },
-                    { label: 'Format', value: 'HTML + CSS' },
-                    { label: 'Nav', value: 'P.100 → P.10X' },
-                    { label: 'Storage', value: 'PostgreSQL' }
+                    ['Storage', 'PostgreSQL'],
+                    ['Format', 'Full HTML'],
+                    ['Design', 'Teletext/Retro'],
+                    ['Access', '/ideas/[id]/page']
                 ]
             }
         };
 
         let isRunning = false;
-        let selectedNode = null;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.node').forEach(node => {
-                node.addEventListener('click', () => selectNode(node));
-            });
-        });
+        function showPanel(id) {
+            const agent = agents[id];
+            if (!agent) return;
 
-        function selectNode(node) {
-            document.querySelectorAll('.node.selected').forEach(n => n.classList.remove('selected'));
-            node.classList.add('selected');
-            selectedNode = node.dataset.node;
-            showNodeDetails(selectedNode);
-        }
+            document.querySelectorAll('.node').forEach(n => n.classList.remove('selected'));
+            document.querySelector(`[data-id="${id}"]`)?.classList.add('selected');
 
-        function showNodeDetails(nodeId) {
-            const data = nodeData[nodeId];
-            if (!data) return;
-
-            document.getElementById('panelTitle').textContent = data.title;
-            
             let html = `
-                <div>
-                    <p class="panel-description">${data.description}</p>
-                    <div class="panel-section">
-                        <div class="panel-section-title">Configuration</div>
-                        <ul class="info-list">
-                            ${data.details.map(d => `
-                                <li><span class="info-label">${d.label}</span><span class="info-value">${d.value}</span></li>
-                            `).join('')}
-                        </ul>
-                    </div>
-                </div>
-                <div>
-                    <div class="panel-section">
-                        <div class="panel-section-title">Zod Schema</div>
-                        <div class="code-block"><code>${escapeHtml(data.schema)}</code></div>
-                    </div>
-                    ${data.code ? `
-                    <div class="panel-section">
-                        <div class="panel-section-title">Code</div>
-                        <div class="code-block"><code>${escapeHtml(data.code)}</code></div>
-                    </div>` : ''}
+                <div class="section">
+                    <div class="section-title">DESCRIERE</div>
+                    <div class="info-card"><p>${agent.desc}</p></div>
                 </div>
             `;
 
+            if (agent.schema) {
+                html += `
+                    <div class="section">
+                        <div class="section-title">ZOD SCHEMA</div>
+                        <div class="code-box"><code>${agent.schema}</code></div>
+                    </div>
+                `;
+            }
+
+            if (agent.code) {
+                html += `
+                    <div class="section">
+                        <div class="section-title">CODE</div>
+                        <div class="code-box"><code>${agent.code}</code></div>
+                    </div>
+                `;
+            }
+
+            if (agent.details) {
+                html += `<div class="section"><div class="section-title">DETAILS</div>`;
+                agent.details.forEach(([label, value]) => {
+                    html += `<div class="detail-row"><span class="detail-label">${label}</span><span class="detail-value">${value}</span></div>`;
+                });
+                html += `</div>`;
+            }
+
+            document.getElementById('panelTitle').textContent = agent.title;
             document.getElementById('panelContent').innerHTML = html;
-            document.getElementById('sidePanel').classList.add('open');
+            document.getElementById('panel').classList.add('open');
         }
 
         function closePanel() {
-            document.getElementById('sidePanel').classList.remove('open');
-            document.querySelectorAll('.node.selected').forEach(n => n.classList.remove('selected'));
+            document.getElementById('panel').classList.remove('open');
+            document.querySelectorAll('.node').forEach(n => n.classList.remove('selected'));
         }
 
         async function runPipeline() {
             if (isRunning) return;
             isRunning = true;
-            
-            const btn = document.getElementById('runButton');
-            const status = document.getElementById('statusText');
-            
-            btn.disabled = true;
+
+            const btn = document.getElementById('runBtn');
+            const bar = document.getElementById('progressBar');
+            const fill = document.getElementById('progressFill');
+            const status = document.getElementById('progressStatus');
+
+            // Reset
+            document.querySelectorAll('.node').forEach(n => n.classList.remove('running', 'done'));
+            document.querySelectorAll('.arrow').forEach(a => a.classList.remove('active', 'done'));
+
             btn.classList.add('running');
             btn.textContent = '⟳ RUNNING...';
+            bar.classList.add('visible');
 
-            await runStage(0, ['input'], 'Processing input...', 10);
-            await runStage(1, ['analyzer'], 'Analyzing content...', 30);
-            await runStage(2, ['designer', 'ascii', 'copywriter'], 'Parallel agents...', 70, true);
-            await runStage(3, ['renderer'], 'Rendering pages...', 90);
-            await runStage(4, ['output'], 'Complete!', 100);
+            const steps = [
+                { nodes: ['input'], msg: 'Processing form input...', pct: 10 },
+                { nodes: ['validator'], msg: 'Validating & enriching...', pct: 20 },
+                { nodes: ['basic', 'tech', 'business', 'regulations', 'differentiators', 'other'], msg: 'Running 6 analyzers in parallel...', pct: 50, parallel: true },
+                { nodes: ['aggregator'], msg: 'Aggregating analyses...', pct: 60 },
+                { nodes: ['htmlbuilder'], msg: 'Building HTML structure...', pct: 75 },
+                { nodes: ['statistician'], msg: 'Calculating scores...', pct: 85 },
+                { nodes: ['visual'], msg: 'Designing visual output...', pct: 95 },
+                { nodes: ['output'], msg: 'Complete!', pct: 100 }
+            ];
 
-            status.textContent = '✓ PIPELINE COMPLETE';
-            status.style.color = 'var(--green)';
-            btn.classList.remove('running');
-            btn.textContent = '✓ COMPLETE';
-            isRunning = false;
-        }
+            for (let i = 0; i < steps.length; i++) {
+                const step = steps[i];
+                status.textContent = step.msg;
+                fill.style.width = step.pct + '%';
 
-        async function runStage(stageNum, nodeIds, msg, progress, parallel = false) {
-            document.getElementById('statusText').textContent = msg;
+                if (i > 0) {
+                    const arrow = document.querySelector(`[data-arrow="${i-1}"]`);
+                    if (arrow) arrow.classList.add('active');
+                }
 
-            if (stageNum > 0) {
-                const arrow = document.querySelector(`[data-arrow="${stageNum - 1}"]`);
-                if (arrow) arrow.classList.add('active');
-            }
+                step.nodes.forEach(id => {
+                    document.querySelector(`[data-id="${id}"]`)?.classList.add('running');
+                });
 
-            nodeIds.forEach(id => {
-                const node = document.querySelector(`[data-node="${id}"]`);
-                node.classList.add('running');
-                node.querySelector('.node-status').textContent = 'RUNNING';
-                node.querySelector('.node-status').className = 'node-status running';
-            });
+                await sleep(step.parallel ? 2000 : 800);
 
-            await sleep(parallel ? 2000 : 1500);
+                step.nodes.forEach(id => {
+                    const node = document.querySelector(`[data-id="${id}"]`);
+                    node?.classList.remove('running');
+                    node?.classList.add('done');
+                });
 
-            nodeIds.forEach(id => {
-                const node = document.querySelector(`[data-node="${id}"]`);
-                node.classList.remove('running');
-                node.classList.add('complete');
-                node.querySelector('.node-status').textContent = 'COMPLETE';
-                node.querySelector('.node-status').className = 'node-status complete';
-            });
-
-            if (stageNum > 0) {
-                const arrow = document.querySelector(`[data-arrow="${stageNum - 1}"]`);
-                if (arrow) {
-                    arrow.classList.remove('active');
-                    arrow.classList.add('complete');
+                if (i > 0) {
+                    const arrow = document.querySelector(`[data-arrow="${i-1}"]`);
+                    if (arrow) {
+                        arrow.classList.remove('active');
+                        arrow.classList.add('done');
+                    }
                 }
             }
 
-            document.getElementById('progressFill').style.width = progress + '%';
-            document.getElementById('progressPercent').textContent = progress + '%';
-            await sleep(300);
-        }
-
-        function resetPipeline() {
-            if (isRunning) return;
-
-            document.querySelectorAll('.node').forEach(node => {
-                node.classList.remove('running', 'complete', 'selected');
-                node.querySelector('.node-status').textContent = 'WAITING';
-                node.querySelector('.node-status').className = 'node-status waiting';
-            });
-
-            document.querySelectorAll('.stage-arrow').forEach(a => a.classList.remove('active', 'complete'));
-            
-            document.getElementById('progressFill').style.width = '0%';
-            document.getElementById('progressPercent').textContent = '0%';
-            
-            const btn = document.getElementById('runButton');
-            btn.disabled = false;
+            status.textContent = '✅ PIPELINE COMPLETE!';
             btn.classList.remove('running');
+            btn.textContent = '✓ COMPLETE';
+
+            await sleep(3000);
+            bar.classList.remove('visible');
             btn.textContent = '▶ RUN PIPELINE';
-            
-            document.getElementById('statusText').textContent = 'READY TO START';
-            document.getElementById('statusText').style.color = 'var(--yellow)';
-            
-            closePanel();
+            isRunning = false;
         }
 
         function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-        
-        function escapeHtml(t) {
-            return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        }
     </script>
 </body>
 </html>

@@ -711,7 +711,7 @@ export default function HomePage() {
                     <input
                       type="text"
                       className="form-input"
-                      placeholder="e.g., SmartSave - AI-Powered Savings Assistant for Gen Z"
+                      placeholder="e.g., SmartSave - Intelligent Savings Assistant for Gen Z"
                       value={formData.title}
                       onChange={(e) => handleFormChange("title", e.target.value)}
                     />
