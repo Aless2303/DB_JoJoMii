@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { ideas } from "@/lib/db/schema";
+import { ideas, votes } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 const VALID_STATUSES = ["new", "review", "approved", "build", "completed"];
@@ -90,6 +90,10 @@ export async function DELETE(
       );
     }
 
+    // First delete all votes for this idea (to avoid foreign key constraint)
+    await db.delete(votes).where(eq(votes.ideaId, params.id));
+    
+    // Then delete the idea
     await db.delete(ideas).where(eq(ideas.id, params.id));
 
     return NextResponse.json({

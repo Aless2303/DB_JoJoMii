@@ -15,6 +15,12 @@ interface Idea {
   githubLink: string;
   createdAt: string;
   userName?: string;
+  // AI Generated fields
+  generatedHtml?: string | null;
+  generatedPages?: string | null;
+  aiScore?: number | null;
+  aiAnalysis?: string | null;
+  aiRecommendation?: string | null;
 }
 
 interface Stats {
@@ -1383,37 +1389,123 @@ export default function HomePage() {
             </div>
 
             <div className="modal-body">
-              <div style={{ marginBottom: "15px", display: "flex", alignItems: "center", gap: "20px" }}>
-                <span className={`idea-status ${getStatusClass(selectedIdea.status)}`}>
-                  {getStatusLabel(selectedIdea.status)}
-                </span>
-                <div className="vote-buttons">
-                  <button
-                    className={`vote-btn like`}
-                    onClick={() => handleVote(selectedIdea.id, "like")}
-                    disabled={!isLoggedIn}
-                    title={!isLoggedIn ? "Login to vote" : "Like this idea"}
-                  >
-                    ▲ LIKE <span>{selectedIdea.likes}</span>
-                  </button>
-                  <button
-                    className={`vote-btn dislike`}
-                    onClick={() => handleVote(selectedIdea.id, "dislike")}
-                    disabled={!isLoggedIn}
-                    title={!isLoggedIn ? "Login to vote" : "Dislike this idea"}
-                  >
-                    ▼ DISLIKE <span>{selectedIdea.dislikes}</span>
-                  </button>
-                </div>
-              </div>
+              {/* AI Generated Content - Afișează HTML-ul generat dacă există */}
+              {selectedIdea.generatedHtml ? (
+                <>
+                  <div 
+                    className="ai-generated-content"
+                    dangerouslySetInnerHTML={{ __html: selectedIdea.generatedHtml }}
+                    style={{
+                      background: "#0000AA",
+                      padding: "20px",
+                      borderRadius: "8px",
+                      marginBottom: "20px",
+                      fontFamily: "VT323, monospace",
+                      fontSize: "16px",
+                      lineHeight: "1.4",
+                      maxHeight: "70vh",
+                      overflow: "auto"
+                    }}
+                  />
+                </>
+              ) : (
+                <>
+                  <div style={{ marginBottom: "15px", display: "flex", alignItems: "center", gap: "20px" }}>
+                    <span className={`idea-status ${getStatusClass(selectedIdea.status)}`}>
+                      {getStatusLabel(selectedIdea.status)}
+                    </span>
+                    <div className="vote-buttons">
+                      <button
+                        className={`vote-btn like`}
+                        onClick={() => handleVote(selectedIdea.id, "like")}
+                        disabled={!isLoggedIn}
+                        title={!isLoggedIn ? "Login to vote" : "Like this idea"}
+                      >
+                        ▲ LIKE <span>{selectedIdea.likes}</span>
+                      </button>
+                      <button
+                        className={`vote-btn dislike`}
+                        onClick={() => handleVote(selectedIdea.id, "dislike")}
+                        disabled={!isLoggedIn}
+                        title={!isLoggedIn ? "Login to vote" : "Dislike this idea"}
+                      >
+                        ▼ DISLIKE <span>{selectedIdea.dislikes}</span>
+                      </button>
+                    </div>
+                  </div>
 
-              {!isLoggedIn && (
-                <div className="guest-message" style={{ marginBottom: "15px" }}>
-                  <a onClick={() => { closeModal(); setShowAuthModal(true); }}>Login</a> to vote and comment on ideas.
+                  {!isLoggedIn && (
+                    <div className="guest-message" style={{ marginBottom: "15px" }}>
+                      <a onClick={() => { closeModal(); setShowAuthModal(true); }}>Login</a> to vote and comment on ideas.
+                    </div>
+                  )}
+
+                  <div className="modal-description">{selectedIdea.shortDescription}</div>
+                </>
+              )}
+
+              {/* AI Score Badge */}
+              {selectedIdea.aiScore !== null && selectedIdea.aiScore !== undefined && (
+                <div style={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: "10px", 
+                  marginBottom: "15px",
+                  padding: "10px",
+                  background: "rgba(0, 255, 255, 0.1)",
+                  borderRadius: "4px"
+                }}>
+                  <span style={{ color: "#00ffff", fontWeight: "bold" }}>AI SCORE:</span>
+                  <span style={{ 
+                    color: selectedIdea.aiScore >= 70 ? "#00ff00" : selectedIdea.aiScore >= 50 ? "#ffff00" : "#ff0000",
+                    fontSize: "24px",
+                    fontWeight: "bold"
+                  }}>
+                    {selectedIdea.aiScore}%
+                  </span>
+                  {selectedIdea.aiRecommendation && (
+                    <span style={{
+                      background: selectedIdea.aiRecommendation === "highly-recommended" ? "#00ff00" :
+                                 selectedIdea.aiRecommendation === "recommended" ? "#00ffff" :
+                                 selectedIdea.aiRecommendation === "consider" ? "#ffff00" : "#ff6600",
+                      color: "#000",
+                      padding: "2px 8px",
+                      borderRadius: "4px",
+                      fontSize: "12px",
+                      textTransform: "uppercase"
+                    }}>
+                      {selectedIdea.aiRecommendation.replace("-", " ")}
+                    </span>
+                  )}
                 </div>
               )}
 
-              <div className="modal-description">{selectedIdea.shortDescription}</div>
+              {/* Voting și acțiuni - afișate mereu */}
+              {selectedIdea.generatedHtml && (
+                <div style={{ marginBottom: "15px", display: "flex", alignItems: "center", gap: "20px" }}>
+                  <span className={`idea-status ${getStatusClass(selectedIdea.status)}`}>
+                    {getStatusLabel(selectedIdea.status)}
+                  </span>
+                  <div className="vote-buttons">
+                    <button
+                      className={`vote-btn like`}
+                      onClick={() => handleVote(selectedIdea.id, "like")}
+                      disabled={!isLoggedIn}
+                      title={!isLoggedIn ? "Login to vote" : "Like this idea"}
+                    >
+                      ▲ LIKE <span>{selectedIdea.likes}</span>
+                    </button>
+                    <button
+                      className={`vote-btn dislike`}
+                      onClick={() => handleVote(selectedIdea.id, "dislike")}
+                      disabled={!isLoggedIn}
+                      title={!isLoggedIn ? "Login to vote" : "Dislike this idea"}
+                    >
+                      ▼ DISLIKE <span>{selectedIdea.dislikes}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="modal-actions">
                 <a

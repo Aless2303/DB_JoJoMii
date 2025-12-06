@@ -4,6 +4,8 @@ import { ideas, users } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { runAIPipeline, parseMarkdownInput } from "@/lib/ai/orchestrator";
+import { RawIdeaInput } from "@/lib/ai/schemas";
 
 // GET /api/ideas - Get all ideas
 export async function GET(request: NextRequest) {
@@ -35,6 +37,12 @@ export async function GET(request: NextRequest) {
         demoLink: ideas.aiResearchDetails,
         needFromDB: ideas.communityQuestions,
         additionalNotes: ideas.estimatedBudget,
+        // AI Generated fields
+        generatedHtml: ideas.generatedHtml,
+        generatedPages: ideas.generatedPages,
+        aiScore: ideas.aiScore,
+        aiAnalysis: ideas.aiAnalysis,
+        aiRecommendation: ideas.aiRecommendation,
         status: ideas.status,
         likes: ideas.likes,
         dislikes: ideas.dislikes,
@@ -85,6 +93,61 @@ export async function POST(request: NextRequest) {
 
     const id = generateId();
 
+    // Prepare raw input for AI pipeline
+    const rawInput: RawIdeaInput = {
+      ideaTitle: body.title,
+      bigIdea: body.shortDescription,
+      mainCategory: body.category,
+      problemSolved: body.problemSolved,
+      coreTechnologies: body.technologies ? body.technologies.split(",").map((t: string) => t.trim()) : [],
+      solutionType: body.solutionType || "",
+      techStackDetails: body.techStackDetails || "",
+      targetSegment: body.targetSegment || "",
+      monetizationModel: body.monetizationModel || "",
+      estimatedMarketSize: body.marketSize || "",
+      applicableRegulations: body.regulations ? body.regulations.split(",").map((r: string) => r.trim()) : [],
+      complianceNotes: body.complianceNotes || "",
+      uniqueValue: body.uniqueValue || "",
+      implementationLevel: body.implementationLevel ? [body.implementationLevel] : [],
+      projectStage: body.projectStage || "",
+      githubLink: body.githubLink || "",
+      marketResearch: body.competitors || "",
+      teamComposition: body.team || "",
+      demoVideo: body.demoLink || undefined,
+      needsFromDB: body.needFromDB || "",
+      additionalNotes: body.additionalNotes || "",
+    };
+
+    // Run AI Pipeline
+    console.log("🚀 Running AI Pipeline for idea:", body.title);
+    let aiResult = null;
+    let aiScore = null;
+    let aiRecommendation = null;
+    let generatedHtml = null;
+    let generatedPages = null;
+    let aiAnalysis = null;
+
+    try {
+      aiResult = await runAIPipeline(rawInput, { debug: true });
+      
+      if (aiResult.success && aiResult.statistics && aiResult.visualOutput) {
+        aiScore = aiResult.statistics.overallScore;
+        aiRecommendation = aiResult.statistics.recommendation;
+        generatedHtml = aiResult.visualOutput.htmlOutput;
+        generatedPages = JSON.stringify(aiResult.visualOutput.pages);
+        aiAnalysis = JSON.stringify({
+          statistics: aiResult.statistics,
+          aggregatedAnalysis: aiResult.aggregatedAnalysis,
+        });
+        console.log("✅ AI Pipeline completed successfully! Score:", aiScore);
+      } else {
+        console.warn("⚠️ AI Pipeline completed but with issues:", aiResult.error);
+      }
+    } catch (aiError) {
+      console.error("❌ AI Pipeline error (non-blocking):", aiError);
+      // Continue without AI data - idea will still be saved
+    }
+
     // Create idea record
     await db.insert(ideas).values({
       id,
@@ -101,7 +164,7 @@ export async function POST(request: NextRequest) {
       regulations: body.regulations || "",
       complianceNotes: body.complianceNotes || "",
       uniqueValue: body.uniqueValue || "",
-      implementationLevel: body.implementationLevel || 0,
+      implementationLevel: body.implementationLevel || "0",
       estimatedTimeline: body.projectStage || "",
       githubLink: body.githubLink || "",
       competitors: body.competitors || "",
@@ -110,6 +173,12 @@ export async function POST(request: NextRequest) {
       aiResearchDetails: body.demoLink || "",
       communityQuestions: body.needFromDB || "",
       estimatedBudget: body.additionalNotes || "",
+      // AI Generated fields
+      generatedHtml: generatedHtml,
+      generatedPages: generatedPages,
+      aiScore: aiScore,
+      aiAnalysis: aiAnalysis,
+      aiRecommendation: aiRecommendation,
       status: "new",
       likes: 0,
       dislikes: 0,
@@ -118,6 +187,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       id,
       message: "Idea submitted successfully!",
+      aiProcessed: aiResult?.success || false,
+      aiScore: aiScore,
+      aiRecommendation: aiRecommendation,
     });
   } catch (error) {
     console.error("Error creating idea:", error);

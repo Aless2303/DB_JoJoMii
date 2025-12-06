@@ -1,11 +1,14 @@
 "use client";
 
 import { ButtonHTMLAttributes, forwardRef } from "react";
-import { motion } from "framer-motion";
+import { motion, HTMLMotionProps } from "framer-motion";
 
-interface TeletextButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+type MotionButtonProps = HTMLMotionProps<"button">;
+
+interface TeletextButtonProps extends Omit<MotionButtonProps, "children"> {
   variant?: "default" | "primary" | "danger";
   isLoading?: boolean;
+  children?: React.ReactNode;
 }
 
 export const TeletextButton = forwardRef<HTMLButtonElement, TeletextButtonProps>(

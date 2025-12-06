@@ -56,6 +56,10 @@ export const ideas = pgTable("ideas", {
   
   // Generated content
   generatedPages: text("generated_pages"), // JSON - array of rendered pages
+  generatedHtml: text("generated_html"), // Full HTML output from Visual Designer
+  aiScore: integer("ai_score"), // Overall AI score (0-100)
+  aiAnalysis: text("ai_analysis"), // JSON - full AI analysis data
+  aiRecommendation: text("ai_recommendation"), // highly-recommended, recommended, consider, needs-work
   pageNumber: integer("page_number"), // Base page number for this idea (e.g., 110)
   
   // Metadata - Updated status flow: new -> review -> approved -> build -> completed
