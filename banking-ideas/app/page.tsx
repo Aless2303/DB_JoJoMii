@@ -68,6 +68,34 @@ export default function HomePage() {
   const [users, setUsers] = useState<User[]>([]);
   const [adminLoading, setAdminLoading] = useState(false);
 
+  // Submit form state
+  const [formData, setFormData] = useState({
+    title: "",
+    shortDescription: "",
+    category: "",
+    problemSolved: "",
+    technologies: [] as string[],
+    solutionType: "",
+    techStackDetails: "",
+    targetSegment: "",
+    monetizationModel: "",
+    marketSize: "",
+    regulations: [] as string[],
+    complianceNotes: "",
+    uniqueValue: "",
+    implementationLevel: [] as string[],
+    projectStage: "",
+    githubLink: "",
+    competitors: "",
+    team: "",
+    demoLink: "",
+    needFromDB: "",
+    additionalNotes: "",
+  });
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
   // User role helper
   const userRole = session?.user?.role || "guest";
   const isLoggedIn = !!session?.user;
@@ -345,24 +373,129 @@ export default function HomePage() {
     }
   };
 
-  const generateMockup = () => {
-    const preview = document.getElementById("ai-preview");
-    const frame = document.getElementById("ai-mockup-frame");
-    if (preview && frame) {
-      preview.style.display = "block";
-      setTimeout(() => {
-        frame.innerHTML = `
-          <div class="mockup-content">
-            <div style="color: #0f0; font-size: 12px;">┌────────────────────────────┐</div>
-            <div style="color: #ff0;">YOUR PROJECT MOCKUP</div>
-            <div style="color: #0ff; font-size: 12px;">════════════════════════</div>
-            <div style="color: #fff;">[ AI Generated Preview ]</div>
-            <div style="color: #0f0;">Status: READY</div>
-            <div style="color: #0f0; font-size: 12px;">└────────────────────────────┘</div>
-          </div>
-        `;
-      }, 2000);
+  // Form handlers
+  const handleFormChange = (field: string, value: string | string[]) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleCheckboxChange = (field: string, value: string, checked: boolean) => {
+    setFormData(prev => {
+      const currentValues = prev[field as keyof typeof prev] as string[];
+      if (checked) {
+        return { ...prev, [field]: [...currentValues, value] };
+      } else {
+        return { ...prev, [field]: currentValues.filter(v => v !== value) };
+      }
+    });
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      shortDescription: "",
+      category: "",
+      problemSolved: "",
+      technologies: [],
+      solutionType: "",
+      techStackDetails: "",
+      targetSegment: "",
+      monetizationModel: "",
+      marketSize: "",
+      regulations: [],
+      complianceNotes: "",
+      uniqueValue: "",
+      implementationLevel: [],
+      projectStage: "",
+      githubLink: "",
+      competitors: "",
+      team: "",
+      demoLink: "",
+      needFromDB: "",
+      additionalNotes: "",
+    });
+    setSubmitError("");
+    setSubmitSuccess(false);
+  };
+
+  const handleSubmitIdea = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitError("");
+    setSubmitLoading(true);
+
+    // Validate required fields
+    if (!formData.title.trim()) {
+      setSubmitError("Please enter an idea title");
+      setSubmitLoading(false);
+      return;
     }
+    if (!formData.shortDescription.trim()) {
+      setSubmitError("Please enter a description (The Big Idea)");
+      setSubmitLoading(false);
+      return;
+    }
+    if (!formData.category) {
+      setSubmitError("Please select a category");
+      setSubmitLoading(false);
+      return;
+    }
+    if (!formData.problemSolved.trim()) {
+      setSubmitError("Please describe the problem it solves");
+      setSubmitLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/ideas', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          technologies: formData.technologies.join(", "),
+          regulations: formData.regulations.join(", "),
+          implementationLevel: formData.implementationLevel.join(", "),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setSubmitError(data.error || "Failed to submit idea");
+        setSubmitLoading(false);
+        return;
+      }
+
+      // Success!
+      setSubmitSuccess(true);
+      resetForm();
+      
+      // Refresh ideas list
+      const ideasResponse = await fetch('/api/ideas');
+      if (ideasResponse.ok) {
+        const ideasData = await ideasResponse.json();
+        setIdeas(ideasData.ideas || []);
+        // Update stats
+        const ideasList = ideasData.ideas || [];
+        setStats({
+          totalIdeas: ideasList.length,
+          new: ideasList.filter((i: Idea) => i.status === "new").length,
+          inReview: ideasList.filter((i: Idea) => i.status === "review").length,
+          approved: ideasList.filter((i: Idea) => i.status === "approved").length,
+          building: ideasList.filter((i: Idea) => i.status === "build").length,
+          completed: ideasList.filter((i: Idea) => i.status === "completed").length,
+        });
+      }
+
+      // Switch to browse tab after short delay
+      setTimeout(() => {
+        setActiveTab("browse");
+        setSubmitSuccess(false);
+      }, 2000);
+
+    } catch (error) {
+      console.error("Error submitting idea:", error);
+      setSubmitError("An error occurred. Please try again.");
+    }
+    setSubmitLoading(false);
   };
 
   // Sort ideas by votes for top tab
@@ -537,8 +670,29 @@ export default function HomePage() {
                   <a onClick={() => { setAuthMode("register"); setShowAuthModal(true); }}>Register</a> to continue.
                 </p>
               </div>
+            ) : submitSuccess ? (
+              <div style={{ padding: "40px", textAlign: "center" }}>
+                <div style={{ color: "var(--teletext-green)", fontSize: "32px", marginBottom: "20px" }}>
+                  ✓ IDEA SUBMITTED SUCCESSFULLY!
+                </div>
+                <p style={{ color: "var(--teletext-cyan)" }}>
+                  Redirecting to Browse Ideas...
+                </p>
+              </div>
             ) : (
-              <form style={{ marginTop: "15px" }}>
+              <form style={{ marginTop: "15px" }} onSubmit={handleSubmitIdea}>
+                {submitError && (
+                  <div style={{ 
+                    background: "rgba(255,0,0,0.2)", 
+                    border: "2px solid var(--teletext-red)", 
+                    padding: "10px", 
+                    marginBottom: "15px",
+                    color: "var(--teletext-red)"
+                  }}>
+                    ⚠ {submitError}
+                  </div>
+                )}
+
                 {/* SECTION 1: Basic Information */}
                 <div className="form-section">
                   <div className="form-section-header">
@@ -552,6 +706,8 @@ export default function HomePage() {
                       type="text"
                       className="form-input"
                       placeholder="e.g., SmartSave - AI-Powered Savings Assistant for Gen Z"
+                      value={formData.title}
+                      onChange={(e) => handleFormChange("title", e.target.value)}
                     />
                   </div>
 
@@ -560,23 +716,29 @@ export default function HomePage() {
                     <textarea
                       className="form-input form-textarea"
                       placeholder="e.g., An intelligent savings app that analyzes spending patterns and automatically transfers small amounts to savings goals. Uses gamification and social features to make saving money engaging for younger demographics."
+                      value={formData.shortDescription}
+                      onChange={(e) => handleFormChange("shortDescription", e.target.value)}
                     ></textarea>
                   </div>
 
                   <div className="form-row">
                     <label className="form-label">MAIN CATEGORY *</label>
-                    <select className="form-input">
+                    <select 
+                      className="form-input"
+                      value={formData.category}
+                      onChange={(e) => handleFormChange("category", e.target.value)}
+                    >
                       <option value="">-- Select Category --</option>
-                      <option>Digital Banking</option>
-                      <option>Payments & Transfers</option>
-                      <option>Wealth Management</option>
-                      <option>Lending & Credit</option>
-                      <option>Insurance</option>
-                      <option>Fraud & Security</option>
-                      <option>Customer Experience</option>
-                      <option>Internal Operations</option>
-                      <option>ESG & Sustainability</option>
-                      <option>Other</option>
+                      <option value="Digital Banking">Digital Banking</option>
+                      <option value="Payments & Transfers">Payments & Transfers</option>
+                      <option value="Wealth Management">Wealth Management</option>
+                      <option value="Lending & Credit">Lending & Credit</option>
+                      <option value="Insurance">Insurance</option>
+                      <option value="Fraud & Security">Fraud & Security</option>
+                      <option value="Customer Experience">Customer Experience</option>
+                      <option value="Internal Operations">Internal Operations</option>
+                      <option value="ESG & Sustainability">ESG & Sustainability</option>
+                      <option value="Other">Other</option>
                     </select>
                   </div>
 
@@ -585,6 +747,8 @@ export default function HomePage() {
                     <textarea
                       className="form-input form-textarea"
                       placeholder="e.g., Young adults struggle to build savings habits due to lack of engagement with traditional banking tools. 67% of Gen Z report having no emergency fund, and traditional savings accounts feel disconnected from their digital lifestyle."
+                      value={formData.problemSolved}
+                      onChange={(e) => handleFormChange("problemSolved", e.target.value)}
                     ></textarea>
                   </div>
                 </div>
@@ -599,45 +763,34 @@ export default function HomePage() {
                   <div className="form-row">
                     <label className="form-label">CORE TECHNOLOGIES (select all that apply)</label>
                     <div className="checkbox-group">
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> Artificial Intelligence / ML
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> Blockchain / DLT
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> Cloud Computing
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> Big Data / Analytics
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> IoT / Embedded Systems
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> API / Open Banking
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> Biometrics
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> AR / VR
-                      </label>
+                      {["Artificial Intelligence / ML", "Blockchain / DLT", "Cloud Computing", "Big Data / Analytics", "IoT / Embedded Systems", "API / Open Banking", "Biometrics", "AR / VR"].map((tech) => (
+                        <label key={tech} className="checkbox-label">
+                          <input 
+                            type="checkbox" 
+                            checked={formData.technologies.includes(tech)}
+                            onChange={(e) => handleCheckboxChange("technologies", tech, e.target.checked)}
+                          /> {tech}
+                        </label>
+                      ))}
                     </div>
                   </div>
 
                   <div className="form-row">
-                    <label className="form-label">SOLUTION TYPE *</label>
-                    <select className="form-input">
+                    <label className="form-label">SOLUTION TYPE</label>
+                    <select 
+                      className="form-input"
+                      value={formData.solutionType}
+                      onChange={(e) => handleFormChange("solutionType", e.target.value)}
+                    >
                       <option value="">-- Select Solution Type --</option>
-                      <option>Mobile App (iOS/Android)</option>
-                      <option>Web Application</option>
-                      <option>Desktop Application</option>
-                      <option>API / Backend Service</option>
-                      <option>Browser Extension</option>
-                      <option>Chatbot / Conversational AI</option>
-                      <option>Hardware + Software</option>
-                      <option>Platform / Marketplace</option>
+                      <option value="Mobile App (iOS/Android)">Mobile App (iOS/Android)</option>
+                      <option value="Web Application">Web Application</option>
+                      <option value="Desktop Application">Desktop Application</option>
+                      <option value="API / Backend Service">API / Backend Service</option>
+                      <option value="Browser Extension">Browser Extension</option>
+                      <option value="Chatbot / Conversational AI">Chatbot / Conversational AI</option>
+                      <option value="Hardware + Software">Hardware + Software</option>
+                      <option value="Platform / Marketplace">Platform / Marketplace</option>
                     </select>
                   </div>
 
@@ -647,6 +800,8 @@ export default function HomePage() {
                       type="text"
                       className="form-input"
                       placeholder="e.g., React Native, Node.js, PostgreSQL, TensorFlow, AWS Lambda"
+                      value={formData.techStackDetails}
+                      onChange={(e) => handleFormChange("techStackDetails", e.target.value)}
                     />
                   </div>
                 </div>
@@ -659,36 +814,44 @@ export default function HomePage() {
                   </div>
 
                   <div className="form-row">
-                    <label className="form-label">TARGET SEGMENT *</label>
-                    <select className="form-input">
+                    <label className="form-label">TARGET SEGMENT</label>
+                    <select 
+                      className="form-input"
+                      value={formData.targetSegment}
+                      onChange={(e) => handleFormChange("targetSegment", e.target.value)}
+                    >
                       <option value="">-- Select Target Segment --</option>
-                      <option>Retail Banking - Gen Z (18-25)</option>
-                      <option>Retail Banking - Millennials (26-41)</option>
-                      <option>Retail Banking - Gen X (42-57)</option>
-                      <option>Retail Banking - Seniors (58+)</option>
-                      <option>Small Business / SME</option>
-                      <option>Corporate Clients</option>
-                      <option>High Net Worth Individuals</option>
-                      <option>Internal - Bank Employees</option>
-                      <option>B2B - Other Financial Institutions</option>
-                      <option>Universal / All Segments</option>
+                      <option value="Retail Banking - Gen Z (18-25)">Retail Banking - Gen Z (18-25)</option>
+                      <option value="Retail Banking - Millennials (26-41)">Retail Banking - Millennials (26-41)</option>
+                      <option value="Retail Banking - Gen X (42-57)">Retail Banking - Gen X (42-57)</option>
+                      <option value="Retail Banking - Seniors (58+)">Retail Banking - Seniors (58+)</option>
+                      <option value="Small Business / SME">Small Business / SME</option>
+                      <option value="Corporate Clients">Corporate Clients</option>
+                      <option value="High Net Worth Individuals">High Net Worth Individuals</option>
+                      <option value="Internal - Bank Employees">Internal - Bank Employees</option>
+                      <option value="B2B - Other Financial Institutions">B2B - Other Financial Institutions</option>
+                      <option value="Universal / All Segments">Universal / All Segments</option>
                     </select>
                   </div>
 
                   <div className="form-row">
                     <label className="form-label">MONETIZATION MODEL</label>
-                    <select className="form-input">
+                    <select 
+                      className="form-input"
+                      value={formData.monetizationModel}
+                      onChange={(e) => handleFormChange("monetizationModel", e.target.value)}
+                    >
                       <option value="">-- Select Monetization Model --</option>
-                      <option>Subscription (Monthly/Annual)</option>
-                      <option>Transaction Fees</option>
-                      <option>Freemium (Basic Free + Premium)</option>
-                      <option>One-time Purchase</option>
-                      <option>Commission Based</option>
-                      <option>Advertising Supported</option>
-                      <option>Cost Savings (Internal Tool)</option>
-                      <option>Data Monetization</option>
-                      <option>White Label / Licensing</option>
-                      <option>Not Applicable / TBD</option>
+                      <option value="Subscription (Monthly/Annual)">Subscription (Monthly/Annual)</option>
+                      <option value="Transaction Fees">Transaction Fees</option>
+                      <option value="Freemium (Basic Free + Premium)">Freemium (Basic Free + Premium)</option>
+                      <option value="One-time Purchase">One-time Purchase</option>
+                      <option value="Commission Based">Commission Based</option>
+                      <option value="Advertising Supported">Advertising Supported</option>
+                      <option value="Cost Savings (Internal Tool)">Cost Savings (Internal Tool)</option>
+                      <option value="Data Monetization">Data Monetization</option>
+                      <option value="White Label / Licensing">White Label / Licensing</option>
+                      <option value="Not Applicable / TBD">Not Applicable / TBD</option>
                     </select>
                   </div>
 
@@ -698,6 +861,8 @@ export default function HomePage() {
                       type="text"
                       className="form-input"
                       placeholder="e.g., €2.5B European digital savings market, growing 15% YoY"
+                      value={formData.marketSize}
+                      onChange={(e) => handleFormChange("marketSize", e.target.value)}
                     />
                   </div>
                 </div>
@@ -712,30 +877,15 @@ export default function HomePage() {
                   <div className="form-row">
                     <label className="form-label">APPLICABLE REGULATIONS (select all that apply)</label>
                     <div className="checkbox-group">
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> GDPR (Data Protection)
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> PSD2 / Open Banking
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> MiFID II (Investment Services)
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> AML / KYC Requirements
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> Basel III / IV
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> DORA (Digital Operational Resilience)
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> AI Act (EU)
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> Not Sure / Need Guidance
-                      </label>
+                      {["GDPR (Data Protection)", "PSD2 / Open Banking", "MiFID II (Investment Services)", "AML / KYC Requirements", "Basel III / IV", "DORA (Digital Operational Resilience)", "AI Act (EU)", "Not Sure / Need Guidance"].map((reg) => (
+                        <label key={reg} className="checkbox-label">
+                          <input 
+                            type="checkbox" 
+                            checked={formData.regulations.includes(reg)}
+                            onChange={(e) => handleCheckboxChange("regulations", reg, e.target.checked)}
+                          /> {reg}
+                        </label>
+                      ))}
                     </div>
                   </div>
 
@@ -744,6 +894,8 @@ export default function HomePage() {
                     <textarea
                       className="form-input form-textarea-small"
                       placeholder="e.g., We've designed with privacy-by-default. All user data is encrypted and stored in EU data centers. We need guidance on cross-border data transfers."
+                      value={formData.complianceNotes}
+                      onChange={(e) => handleFormChange("complianceNotes", e.target.value)}
                     ></textarea>
                   </div>
                 </div>
@@ -756,64 +908,56 @@ export default function HomePage() {
                   </div>
 
                   <div className="form-row">
-                    <label className="form-label">WHAT MAKES THIS UNIQUE? *</label>
+                    <label className="form-label">WHAT MAKES THIS UNIQUE?</label>
                     <textarea
                       className="form-input form-textarea"
                       placeholder="e.g., Unlike existing apps, we use behavioral psychology and social proof to create 'savings challenges' with friends. Our AI predicts the optimal micro-transfer amount based on upcoming expenses, ensuring users never overdraft."
+                      value={formData.uniqueValue}
+                      onChange={(e) => handleFormChange("uniqueValue", e.target.value)}
                     ></textarea>
                   </div>
 
                   <div className="form-row">
-                    <label className="form-label">CURRENT IMPLEMENTATION LEVEL *</label>
+                    <label className="form-label">CURRENT IMPLEMENTATION LEVEL</label>
                     <div className="checkbox-group">
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> Frontend UI/UX
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> Backend / API
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> Database Schema
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> Authentication / Security
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> AI/ML Models
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> Third-party Integrations
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> Testing / QA
-                      </label>
-                      <label className="checkbox-label">
-                        <input type="checkbox" /> Documentation
-                      </label>
+                      {["Frontend UI/UX", "Backend / API", "Database Schema", "Authentication / Security", "AI/ML Models", "Third-party Integrations", "Testing / QA", "Documentation"].map((level) => (
+                        <label key={level} className="checkbox-label">
+                          <input 
+                            type="checkbox" 
+                            checked={formData.implementationLevel.includes(level)}
+                            onChange={(e) => handleCheckboxChange("implementationLevel", level, e.target.checked)}
+                          /> {level}
+                        </label>
+                      ))}
                     </div>
                   </div>
 
                   <div className="form-row">
-                    <label className="form-label">PROJECT STAGE *</label>
-                    <select className="form-input">
+                    <label className="form-label">PROJECT STAGE</label>
+                    <select 
+                      className="form-input"
+                      value={formData.projectStage}
+                      onChange={(e) => handleFormChange("projectStage", e.target.value)}
+                    >
                       <option value="">-- Select Stage --</option>
-                      <option>Proof of Concept (PoC)</option>
-                      <option>Working Prototype</option>
-                      <option>Alpha Version</option>
-                      <option>Beta Version</option>
-                      <option>MVP Ready</option>
-                      <option>Production Ready</option>
+                      <option value="Proof of Concept (PoC)">Proof of Concept (PoC)</option>
+                      <option value="Working Prototype">Working Prototype</option>
+                      <option value="Alpha Version">Alpha Version</option>
+                      <option value="Beta Version">Beta Version</option>
+                      <option value="MVP Ready">MVP Ready</option>
+                      <option value="Production Ready">Production Ready</option>
                     </select>
                   </div>
 
                   <div className="form-row">
-                    <label className="form-label">GITHUB REPOSITORY LINK *</label>
+                    <label className="form-label">GITHUB REPOSITORY LINK</label>
                     <input
                       type="text"
                       className="form-input"
                       placeholder="https://github.com/your-username/your-project"
+                      value={formData.githubLink}
+                      onChange={(e) => handleFormChange("githubLink", e.target.value)}
                     />
-                    <span className="form-hint">⚠ Required: Must have at least a basic implementation</span>
                   </div>
 
                   <div className="form-row">
@@ -821,6 +965,8 @@ export default function HomePage() {
                     <textarea
                       className="form-input form-textarea"
                       placeholder="e.g., Analyzed: Acorns (US - $3B valuation, lacks social features), Plum (UK - AI-based but limited personalization), Revolut Vaults (no gamification). Our edge: Social challenges + predictive AI + DB's trust factor."
+                      value={formData.competitors}
+                      onChange={(e) => handleFormChange("competitors", e.target.value)}
                     ></textarea>
                   </div>
                 </div>
@@ -838,6 +984,8 @@ export default function HomePage() {
                       type="text"
                       className="form-input"
                       placeholder="e.g., 2 Full-stack devs, 1 ML engineer, 1 UX designer"
+                      value={formData.team}
+                      onChange={(e) => handleFormChange("team", e.target.value)}
                     />
                   </div>
 
@@ -847,6 +995,8 @@ export default function HomePage() {
                       type="text"
                       className="form-input"
                       placeholder="https://youtube.com/watch?v=... or https://docs.google.com/presentation/..."
+                      value={formData.demoLink}
+                      onChange={(e) => handleFormChange("demoLink", e.target.value)}
                     />
                   </div>
 
@@ -855,6 +1005,8 @@ export default function HomePage() {
                     <textarea
                       className="form-input form-textarea-small"
                       placeholder="e.g., Access to sandbox API for account data, mentorship from product team, regulatory guidance, potential pilot with 1000 users"
+                      value={formData.needFromDB}
+                      onChange={(e) => handleFormChange("needFromDB", e.target.value)}
                     ></textarea>
                   </div>
 
@@ -863,33 +1015,23 @@ export default function HomePage() {
                     <textarea
                       className="form-input form-textarea-small"
                       placeholder="Any other information you'd like to share about your idea..."
+                      value={formData.additionalNotes}
+                      onChange={(e) => handleFormChange("additionalNotes", e.target.value)}
                     ></textarea>
                   </div>
                 </div>
 
                 <div style={{ marginTop: "25px", paddingTop: "20px", borderTop: "2px dashed var(--teletext-cyan)" }}>
-                  <button type="button" className="submit-btn ai-btn" onClick={generateMockup}>
-                    🤖 GENERATE AI MOCKUP
-                  </button>
-                  <button type="submit" className="submit-btn">
-                    ▶ SUBMIT IDEA
+                  <button 
+                    type="submit" 
+                    className="submit-btn"
+                    disabled={submitLoading}
+                  >
+                    {submitLoading ? "⏳ SUBMITTING..." : "▶ SUBMIT IDEA"}
                   </button>
                 </div>
               </form>
             )}
-
-            <div id="ai-preview" style={{ display: "none", marginTop: "20px" }}>
-              <div className="mockup-preview">
-                <div className="mockup-label">◄ AI GENERATING MOCKUP... ►</div>
-                <div className="mockup-frame" id="ai-mockup-frame">
-                  <div className="loading">
-                    <span style={{ color: "var(--teletext-green)" }}>
-                      AI PROCESSING<span className="loading-dots"></span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 

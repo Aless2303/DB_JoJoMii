@@ -1,25 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, generateId, getNextPageNumber } from "@/lib/db";
-import { ideas } from "@/lib/db/schema";
-import { IdeaFormSchema } from "@/lib/schemas";
-import { runAIPipeline } from "@/lib/ai/orchestrator";
+import { db, generateId } from "@/lib/db";
+import { ideas, users } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 // GET /api/ideas - Get all ideas
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const limit = parseInt(searchParams.get("limit") || "20");
+    const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");
-    const category = searchParams.get("category");
 
-    let query = db.select().from(ideas);
-    
-    if (category) {
-      query = query.where(eq(ideas.category, category)) as typeof query;
-    }
-
-    const result = await query
+    const result = await db
+      .select({
+        id: ideas.id,
+        title: ideas.title,
+        shortDescription: ideas.shortDescription,
+        category: ideas.category,
+        problemSolved: ideas.problemSolved,
+        technologies: ideas.aiTechnologies,
+        solutionType: ideas.platform,
+        targetSegment: ideas.targetSegment,
+        monetizationModel: ideas.monetizationModel,
+        marketSize: ideas.targetMarkets,
+        regulations: ideas.regulations,
+        complianceNotes: ideas.complianceNotes,
+        uniqueValue: ideas.uniqueValue,
+        implementationLevel: ideas.implementationLevel,
+        projectStage: ideas.estimatedTimeline,
+        githubLink: ideas.githubLink,
+        competitors: ideas.competitors,
+        team: ideas.team,
+        demoLink: ideas.aiResearchDetails,
+        needFromDB: ideas.communityQuestions,
+        additionalNotes: ideas.estimatedBudget,
+        status: ideas.status,
+        likes: ideas.likes,
+        dislikes: ideas.dislikes,
+        userId: ideas.userId,
+        createdAt: ideas.createdAt,
+        userName: users.name,
+      })
+      .from(ideas)
+      .leftJoin(users, eq(ideas.userId, users.id))
       .orderBy(desc(ideas.createdAt))
       .limit(limit)
       .offset(offset);
@@ -40,81 +64,60 @@ export async function GET(request: NextRequest) {
 // POST /api/ideas - Create a new idea
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "You must be logged in to submit ideas" },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     
-    // Validate input
-    const validationResult = IdeaFormSchema.safeParse(body);
-    if (!validationResult.success) {
+    // Validate required fields
+    if (!body.title || !body.shortDescription || !body.category || !body.problemSolved) {
       return NextResponse.json(
-        { error: "Validation failed", details: validationResult.error.errors },
+        { error: "Missing required fields: title, shortDescription, category, problemSolved" },
         { status: 400 }
       );
     }
 
-    const data = validationResult.data;
     const id = generateId();
-    const pageNumber = await getNextPageNumber();
 
-    // Create initial idea record
+    // Create idea record
     await db.insert(ideas).values({
       id,
-      title: data.title,
-      shortDescription: data.shortDescription,
-      category: data.category,
-      problemSolved: data.problemSolved,
-      aiTechnologies: JSON.stringify(data.aiTechnologies || []),
-      blockchainTechnologies: JSON.stringify(data.blockchainTechnologies || []),
-      otherTechnologies: JSON.stringify(data.otherTechnologies || []),
-      platform: data.platform,
-      targetSegment: data.targetSegment,
-      monetizationModel: JSON.stringify(data.monetizationModel),
-      targetMarkets: JSON.stringify(data.targetMarkets),
-      regulations: JSON.stringify(data.regulations || []),
-      complianceNotes: data.complianceNotes,
-      uniqueValue: data.uniqueValue,
-      implementationLevel: data.implementationLevel,
-      githubLink: data.githubLink,
-      competitors: data.competitors,
-      usedAIResearch: data.usedAIResearch,
-      aiResearchDetails: data.aiResearchDetails,
-      team: data.team,
-      estimatedTimeline: data.estimatedTimeline,
-      estimatedBudget: data.estimatedBudget,
-      communityQuestions: data.communityQuestions,
-      pageNumber,
-      status: "processing",
+      userId: session.user.id,
+      title: body.title,
+      shortDescription: body.shortDescription,
+      category: body.category,
+      problemSolved: body.problemSolved,
+      aiTechnologies: body.technologies || "",
+      platform: body.solutionType || "",
+      targetSegment: body.targetSegment || "",
+      monetizationModel: body.monetizationModel || "",
+      targetMarkets: body.marketSize || "",
+      regulations: body.regulations || "",
+      complianceNotes: body.complianceNotes || "",
+      uniqueValue: body.uniqueValue || "",
+      implementationLevel: body.implementationLevel || 0,
+      estimatedTimeline: body.projectStage || "",
+      githubLink: body.githubLink || "",
+      competitors: body.competitors || "",
+      usedAIResearch: false,
+      team: body.team || "",
+      aiResearchDetails: body.demoLink || "",
+      communityQuestions: body.needFromDB || "",
+      estimatedBudget: body.additionalNotes || "",
+      status: "new",
+      likes: 0,
+      dislikes: 0,
     });
-
-    // Run AI pipeline in background
-    runAIPipeline(data)
-      .then(async (result) => {
-        // Update idea with generated pages
-        await db
-          .update(ideas)
-          .set({
-            generatedPages: JSON.stringify(result.pages),
-            status: "published",
-            updatedAt: new Date(),
-          })
-          .where(eq(ideas.id, id));
-        console.log(`✅ AI pipeline completed for idea ${id}`);
-      })
-      .catch(async (error) => {
-        console.error(`❌ AI pipeline failed for idea ${id}:`, error);
-        await db
-          .update(ideas)
-          .set({
-            status: "draft",
-            updatedAt: new Date(),
-          })
-          .where(eq(ideas.id, id));
-      });
 
     return NextResponse.json({
       id,
-      pageNumber,
-      status: "processing",
-      message: "Ideea a fost creată. Paginile Teletext se generează...",
+      message: "Idea submitted successfully!",
     });
   } catch (error) {
     console.error("Error creating idea:", error);
