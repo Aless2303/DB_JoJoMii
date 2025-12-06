@@ -1,5 +1,8 @@
 # Dependencies
 node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
 # Next.js
 .next/
@@ -31,11 +34,13 @@ drizzle/
 # OS
 .DS_Store
 Thumbs.db
+*.DS_Store
 
 # Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
 
 # Testing
 coverage/
@@ -44,3 +49,16 @@ coverage/
 # Misc
 *.pem
 .vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Debug
+.npm/
+.eslintcache
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
