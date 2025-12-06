@@ -1,23 +1,22 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 import { db, generateId } from "./db";
 import { users } from "./db/schema";
 import { eq } from "drizzle-orm";
 
-// Simple hash function (in production, use bcrypt)
-function hashPassword(password: string): string {
-  // Simple hash for demo - in production use bcrypt
-  let hash = 0;
-  for (let i = 0; i < password.length; i++) {
-    const char = password.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return `hash_${Math.abs(hash).toString(36)}_${password.length}`;
+// Secure password hashing with bcrypt
+async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 10);
 }
 
-function verifyPassword(password: string, hashedPassword: string): boolean {
-  return hashPassword(password) === hashedPassword;
+async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+  // Support both old simple hash and new bcrypt
+  if (hashedPassword.startsWith('hash_')) {
+    // Legacy simple hash - migrate on next login
+    return false; // Force re-registration or password reset
+  }
+  return bcrypt.compare(password, hashedPassword);
 }
 
 export const authOptions: NextAuthOptions = {
@@ -50,7 +49,7 @@ export const authOptions: NextAuthOptions = {
 
           // Create new user
           const userId = generateId();
-          const hashedPassword = hashPassword(password);
+          const hashedPassword = await hashPassword(password);
           const userName = name || email.split("@")[0];
           
           await db.insert(users).values({
@@ -80,7 +79,8 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials");
         }
 
-        if (!verifyPassword(password, user.password)) {
+        const isValid = await verifyPassword(password, user.password);
+        if (!isValid) {
           throw new Error("Invalid credentials");
         }
 

@@ -1,19 +1,19 @@
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import { pgTable, text, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 
 // Users table with role support
-export const users = sqliteTable("users", {
+export const users = pgTable("users", {
   id: text("id").primaryKey(),
   email: text("email").notNull().unique(),
   password: text("password"), // hashed password for credentials auth
   name: text("name"),
   image: text("image"),
   role: text("role").notNull().default("user"), // guest, user, admin
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Ideas table with updated status flow
-export const ideas = sqliteTable("ideas", {
+export const ideas = pgTable("ideas", {
   id: text("id").primaryKey(),
   userId: text("user_id").references(() => users.id),
   
@@ -42,10 +42,10 @@ export const ideas = sqliteTable("ideas", {
   
   // Differentiators
   uniqueValue: text("unique_value").notNull(),
-  implementationLevel: integer("implementation_level").notNull(),
-  githubLink: text("github_link").notNull(),
+  implementationLevel: text("implementation_level"), // Changed to text to store comma-separated list
+  githubLink: text("github_link"),
   competitors: text("competitors"),
-  usedAIResearch: integer("used_ai_research", { mode: "boolean" }).notNull(),
+  usedAIResearch: boolean("used_ai_research").notNull(),
   aiResearchDetails: text("ai_research_details"),
   
   // Additional
@@ -64,39 +64,39 @@ export const ideas = sqliteTable("ideas", {
   dislikes: integer("dislikes").default(0),
   viewCount: integer("view_count").default(0),
   
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // Votes table - Updated for like/dislike system
-export const votes = sqliteTable("votes", {
+export const votes = pgTable("votes", {
   id: text("id").primaryKey(),
   ideaId: text("idea_id").references(() => ideas.id).notNull(),
   userId: text("user_id").references(() => users.id).notNull(),
   voteType: text("vote_type").notNull(), // 'like' or 'dislike'
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // Comments table - Users only
-export const comments = sqliteTable("comments", {
+export const comments = pgTable("comments", {
   id: text("id").primaryKey(),
   ideaId: text("idea_id").references(() => ideas.id).notNull(),
   userId: text("user_id").references(() => users.id).notNull(),
   content: text("content").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Sessions table for NextAuth
-export const sessions = sqliteTable("sessions", {
+export const sessions = pgTable("sessions", {
   id: text("id").primaryKey(),
   sessionToken: text("session_token").notNull().unique(),
   userId: text("user_id").references(() => users.id).notNull(),
-  expires: integer("expires", { mode: "timestamp" }).notNull(),
+  expires: timestamp("expires").notNull(),
 });
 
 // Accounts table for NextAuth (OAuth providers)
-export const accounts = sqliteTable("accounts", {
+export const accounts = pgTable("accounts", {
   id: text("id").primaryKey(),
   userId: text("user_id").references(() => users.id).notNull(),
   type: text("type").notNull(),
