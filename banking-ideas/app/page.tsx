@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-// Tipul pentru o idee
+// Type for an idea
 interface Idea {
   id: number;
   title: string;
@@ -14,72 +14,47 @@ interface Idea {
   github: string;
 }
 
-// Mock data - în producție va veni din baza de date
-const mockIdeas: Idea[] = [
-  {
-    id: 247,
-    title: "AI Portfolio Advisor - Robo-consultant retro",
-    description: "Un consultant de portofoliu bazat pe AI care folosește interfață text-mode pentru a oferi sfaturi de investiții. Utilizatorii primesc recomandări personalizate într-un format retro, făcând finanțele accesibile și nostalgice în același timp. Include analiză de risc, diversificare și tracking în timp real.",
-    status: "new",
-    votes: 42,
-    author: "@maria.developer",
-    date: "05 Dec 2025",
-    github: "https://github.com/maria/ai-portfolio",
-  },
-  {
-    id: 246,
-    title: "Teletext Banking - Mobile banking în stil 80s",
-    description: "O aplicație de mobile banking care recreează experiența teletext pentru operațiuni bancare simple. Navigare cu taste numerice, afișare solduri, transferuri rapide - totul într-un format vizual retro dar cu securitate modernă. Perfect pentru nostalgici și pentru cei care preferă simplitatea.",
-    status: "review",
-    votes: 89,
-    author: "@alex.coder",
-    date: "03 Dec 2025",
-    github: "https://github.com/alex/teletext-banking",
-  },
-  {
-    id: 245,
-    title: "Expense Tracker DOS - Gestiune cheltuieli CLI",
-    description: "Un tracker de cheltuieli cu interfață DOS care rulează în terminal. Comenzi simple, rapoarte ASCII, export CSV. Nostalgie pură pentru developeri.",
-    status: "approved",
-    votes: 156,
-    author: "@retro.dev",
-    date: "01 Dec 2025",
-    github: "https://github.com/retro/expense-dos",
-  },
-  {
-    id: 244,
-    title: "Retro Stock Ticker - Date bursiere în ASCII",
-    description: "Aplicație desktop care afișează date bursiere în timp real folosind caractere ASCII și grafice text-mode. Include alarme și notificări.",
-    status: "building",
-    votes: 203,
-    author: "@stock.wizard",
-    date: "28 Nov 2025",
-    github: "https://github.com/wizard/stock-ticker",
-  },
-  {
-    id: 243,
-    title: "Pixel Budget - Planificator financiar 8-bit",
-    description: "Planificator de buget cu grafică 8-bit și sunete retro. Gamification pentru economisire cu achievement-uri și level-uri.",
-    status: "new",
-    votes: 31,
-    author: "@pixel.master",
-    date: "25 Nov 2025",
-    github: "https://github.com/pixel/budget-game",
-  },
-];
-
-const stats = {
-  totalIdeas: 247,
-  inReview: 38,
-  approved: 12,
-  building: 5,
-};
+// Type for statistics
+interface Stats {
+  totalIdeas: number;
+  inReview: number;
+  approved: number;
+  building: number;
+}
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState("browse");
   const [currentPage, setCurrentPage] = useState("P100");
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
   const [dateTime, setDateTime] = useState("");
+  
+  // State for database data (initially empty)
+  const [ideas, setIdeas] = useState<Idea[]>([]);
+  const [stats, setStats] = useState<Stats>({
+    totalIdeas: 0,
+    inReview: 0,
+    approved: 0,
+    building: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  // TODO: Fetch ideas from database
+  useEffect(() => {
+    const fetchIdeas = async () => {
+      try {
+        // TODO: Replace with actual API call
+        // const response = await fetch('/api/ideas');
+        // const data = await response.json();
+        // setIdeas(data.ideas);
+        // setStats(data.stats);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching ideas:", error);
+        setLoading(false);
+      }
+    };
+    fetchIdeas();
+  }, []);
 
   // Update datetime
   useEffect(() => {
@@ -154,12 +129,12 @@ export default function HomePage() {
 
   const getStatusLabel = (status: string) => {
     const labelMap: Record<string, string> = {
-      new: "NOU",
+      new: "NEW",
       review: "REVIEW",
-      approved: "APROBAT",
+      approved: "APPROVED",
       building: "BUILD",
     };
-    return labelMap[status] || "NOU";
+    return labelMap[status] || "NEW";
   };
 
   const generateMockup = () => {
@@ -183,7 +158,7 @@ export default function HomePage() {
   };
 
   // Sort ideas by votes for top tab
-  const topIdeas = [...mockIdeas].sort((a, b) => b.votes - a.votes).slice(0, 5);
+  const topIdeas = [...ideas].sort((a, b) => b.votes - a.votes).slice(0, 5);
 
   return (
     <>
@@ -202,7 +177,7 @@ export default function HomePage() {
             <span className="logo-idea">Idea</span>
             <span className="logo-text-sub">Text</span>
           </div>
-          <div className="subtitle">Innovation Hub für Deutsche Bank</div>
+          <div className="subtitle">Innovation Hub for Deutsche Bank</div>
         </div>
 
         <div className="mosaic-border"></div>
@@ -213,14 +188,14 @@ export default function HomePage() {
             className={`nav-item ${activeTab === "browse" ? "active" : ""}`}
             onClick={() => showTab("browse")}
           >
-            <span className="nav-label">BROWSE IDEI</span>
+            <span className="nav-label">BROWSE IDEAS</span>
             <span className="nav-page">100-199</span>
           </button>
           <button
             className={`nav-item ${activeTab === "submit" ? "active" : ""}`}
             onClick={() => showTab("submit")}
           >
-            <span className="nav-label">SUBMIT IDEE</span>
+            <span className="nav-label">SUBMIT IDEA</span>
             <span className="nav-page">200</span>
           </button>
           <button
@@ -234,7 +209,7 @@ export default function HomePage() {
             className={`nav-item ${activeTab === "about" ? "active" : ""}`}
             onClick={() => showTab("about")}
           >
-            <span className="nav-label">DESPRE</span>
+            <span className="nav-label">ABOUT</span>
             <span className="nav-page">900</span>
           </button>
         </div>
@@ -243,118 +218,412 @@ export default function HomePage() {
         <div className="stats-bar">
           <div className="stat-item">
             <span className="stat-value">{stats.totalIdeas}</span>
-            <span className="stat-label">IDEI TOTALE</span>
+            <span className="stat-label">TOTAL IDEAS</span>
           </div>
           <div className="stat-item">
             <span className="stat-value">{stats.inReview}</span>
-            <span className="stat-label">ÎN REVIEW</span>
+            <span className="stat-label">IN REVIEW</span>
           </div>
           <div className="stat-item">
             <span className="stat-value">{stats.approved}</span>
-            <span className="stat-label">APROBATE</span>
+            <span className="stat-label">APPROVED</span>
           </div>
           <div className="stat-item">
             <span className="stat-value">{stats.building}</span>
-            <span className="stat-label">ÎN DEZVOLTARE</span>
+            <span className="stat-label">IN DEVELOPMENT</span>
           </div>
         </div>
 
         {/* Tab Content: Browse */}
         <div className={`tab-content ${activeTab === "browse" ? "active" : ""}`}>
           <div className="content-section">
-            <span className="section-title">★ IDEI RECENTE</span>
+            <span className="section-title">★ RECENT IDEAS</span>
 
-            {mockIdeas.map((idea) => (
-              <div
-                key={idea.id}
-                className="idea-item"
-                onClick={() => openIdeaModal(idea)}
-              >
-                <span className="idea-id">#{idea.id}</span>
-                <span className="idea-title">{idea.title}</span>
-                <span className={`idea-status ${getStatusClass(idea.status)}`}>
-                  {getStatusLabel(idea.status)}
-                </span>
-                <span className="idea-votes">
-                  ▲ <span className="vote-count">{idea.votes}</span>
+            {loading ? (
+              <div className="loading">
+                <span style={{ color: "var(--teletext-green)" }}>
+                  LOADING<span className="loading-dots"></span>
                 </span>
               </div>
-            ))}
+            ) : ideas.length === 0 ? (
+              <div style={{ padding: "20px", textAlign: "center", color: "var(--teletext-cyan)" }}>
+                <p style={{ fontSize: "24px", marginBottom: "10px" }}>No ideas yet.</p>
+                <p style={{ color: "var(--teletext-yellow)" }}>
+                  Be the first to add an idea! Click on SUBMIT IDEA.
+                </p>
+              </div>
+            ) : (
+              ideas.map((idea) => (
+                <div
+                  key={idea.id}
+                  className="idea-item"
+                  onClick={() => openIdeaModal(idea)}
+                >
+                  <span className="idea-id">#{idea.id}</span>
+                  <span className="idea-title">{idea.title}</span>
+                  <span className={`idea-status ${getStatusClass(idea.status)}`}>
+                    {getStatusLabel(idea.status)}
+                  </span>
+                  <span className="idea-votes">
+                    ▲ <span className="vote-count">{idea.votes}</span>
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
         {/* Tab Content: Submit */}
         <div className={`tab-content ${activeTab === "submit" ? "active" : ""}`}>
           <div className="content-section submit-section">
-            <span className="section-title section-title-alt">✎ SUBMIT IDEE NOUĂ</span>
+            <span className="section-title section-title-alt">✎ SUBMIT NEW IDEA</span>
 
             <form style={{ marginTop: "15px" }}>
-              <div className="form-row">
-                <label className="form-label">TITLU IDEE:</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="Numele proiectului tău..."
-                />
+              {/* SECTION 1: Basic Information */}
+              <div className="form-section">
+                <div className="form-section-header">
+                  <span className="section-number">1</span>
+                  <span className="section-name">BASIC INFORMATION</span>
+                </div>
+                
+                <div className="form-row">
+                  <label className="form-label">IDEA TITLE *</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g., SmartSave - AI-Powered Savings Assistant for Gen Z"
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">THE BIG IDEA *</label>
+                  <textarea
+                    className="form-input form-textarea"
+                    placeholder="e.g., An intelligent savings app that analyzes spending patterns and automatically transfers small amounts to savings goals. Uses gamification and social features to make saving money engaging for younger demographics."
+                  ></textarea>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">MAIN CATEGORY *</label>
+                  <select className="form-input">
+                    <option value="">-- Select Category --</option>
+                    <option>Digital Banking</option>
+                    <option>Payments & Transfers</option>
+                    <option>Wealth Management</option>
+                    <option>Lending & Credit</option>
+                    <option>Insurance</option>
+                    <option>Fraud & Security</option>
+                    <option>Customer Experience</option>
+                    <option>Internal Operations</option>
+                    <option>ESG & Sustainability</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">PROBLEM IT SOLVES *</label>
+                  <textarea
+                    className="form-input form-textarea"
+                    placeholder="e.g., Young adults struggle to build savings habits due to lack of engagement with traditional banking tools. 67% of Gen Z report having no emergency fund, and traditional savings accounts feel disconnected from their digital lifestyle."
+                  ></textarea>
+                </div>
               </div>
 
-              <div className="form-row">
-                <label className="form-label">DESCRIERE DETALIATĂ:</label>
-                <textarea
-                  className="form-input form-textarea"
-                  placeholder="Descrie ideea ta în detaliu. AI-ul va genera un mockup bazat pe această descriere..."
-                ></textarea>
+              {/* SECTION 2: Preferred Technologies */}
+              <div className="form-section">
+                <div className="form-section-header">
+                  <span className="section-number">2</span>
+                  <span className="section-name">PREFERRED TECHNOLOGIES</span>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">CORE TECHNOLOGIES (select all that apply)</label>
+                  <div className="checkbox-group">
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> Artificial Intelligence / ML
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> Blockchain / DLT
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> Cloud Computing
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> Big Data / Analytics
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> IoT / Embedded Systems
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> API / Open Banking
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> Biometrics
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> AR / VR
+                    </label>
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">SOLUTION TYPE *</label>
+                  <select className="form-input">
+                    <option value="">-- Select Solution Type --</option>
+                    <option>Mobile App (iOS/Android)</option>
+                    <option>Web Application</option>
+                    <option>Desktop Application</option>
+                    <option>API / Backend Service</option>
+                    <option>Browser Extension</option>
+                    <option>Chatbot / Conversational AI</option>
+                    <option>Hardware + Software</option>
+                    <option>Platform / Marketplace</option>
+                  </select>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">TECH STACK DETAILS (optional)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g., React Native, Node.js, PostgreSQL, TensorFlow, AWS Lambda"
+                  />
+                </div>
               </div>
 
-              <div className="form-row">
-                <label className="form-label">LINK GITHUB (obligatoriu):</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="https://github.com/username/repo"
-                />
+              {/* SECTION 3: Context */}
+              <div className="form-section">
+                <div className="form-section-header">
+                  <span className="section-number">3</span>
+                  <span className="section-name">BUSINESS CONTEXT</span>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">TARGET SEGMENT *</label>
+                  <select className="form-input">
+                    <option value="">-- Select Target Segment --</option>
+                    <option>Retail Banking - Gen Z (18-25)</option>
+                    <option>Retail Banking - Millennials (26-41)</option>
+                    <option>Retail Banking - Gen X (42-57)</option>
+                    <option>Retail Banking - Seniors (58+)</option>
+                    <option>Small Business / SME</option>
+                    <option>Corporate Clients</option>
+                    <option>High Net Worth Individuals</option>
+                    <option>Internal - Bank Employees</option>
+                    <option>B2B - Other Financial Institutions</option>
+                    <option>Universal / All Segments</option>
+                  </select>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">MONETIZATION MODEL</label>
+                  <select className="form-input">
+                    <option value="">-- Select Monetization Model --</option>
+                    <option>Subscription (Monthly/Annual)</option>
+                    <option>Transaction Fees</option>
+                    <option>Freemium (Basic Free + Premium)</option>
+                    <option>One-time Purchase</option>
+                    <option>Commission Based</option>
+                    <option>Advertising Supported</option>
+                    <option>Cost Savings (Internal Tool)</option>
+                    <option>Data Monetization</option>
+                    <option>White Label / Licensing</option>
+                    <option>Not Applicable / TBD</option>
+                  </select>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">ESTIMATED MARKET SIZE (optional)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g., €2.5B European digital savings market, growing 15% YoY"
+                  />
+                </div>
               </div>
 
-              <div className="form-row">
-                <label className="form-label">STADIU PROIECT:</label>
-                <select className="form-input">
-                  <option>Concept / Idee</option>
-                  <option>Prototip</option>
-                  <option>În dezvoltare</option>
-                  <option>MVP Ready</option>
-                  <option>Production Ready</option>
-                </select>
+              {/* SECTION 4: Regulations */}
+              <div className="form-section">
+                <div className="form-section-header">
+                  <span className="section-number">4</span>
+                  <span className="section-name">REGULATORY CONSIDERATIONS</span>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">APPLICABLE REGULATIONS (select all that apply)</label>
+                  <div className="checkbox-group">
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> GDPR (Data Protection)
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> PSD2 / Open Banking
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> MiFID II (Investment Services)
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> AML / KYC Requirements
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> Basel III / IV
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> DORA (Digital Operational Resilience)
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> AI Act (EU)
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> Not Sure / Need Guidance
+                    </label>
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">COMPLIANCE NOTES (optional)</label>
+                  <textarea
+                    className="form-input form-textarea-small"
+                    placeholder="e.g., We've designed with privacy-by-default. All user data is encrypted and stored in EU data centers. We need guidance on cross-border data transfers."
+                  ></textarea>
+                </div>
               </div>
 
-              <div className="form-row">
-                <label className="form-label">CATEGORIE:</label>
-                <select className="form-input">
-                  <option>Fintech</option>
-                  <option>Banking</option>
-                  <option>AI/ML</option>
-                  <option>UX/UI</option>
-                  <option>Security</option>
-                  <option>Altele</option>
-                </select>
+              {/* SECTION 5: Differentiators */}
+              <div className="form-section">
+                <div className="form-section-header">
+                  <span className="section-number">5</span>
+                  <span className="section-name">DIFFERENTIATORS & IMPLEMENTATION</span>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">WHAT MAKES THIS UNIQUE? *</label>
+                  <textarea
+                    className="form-input form-textarea"
+                    placeholder="e.g., Unlike existing apps, we use behavioral psychology and social proof to create 'savings challenges' with friends. Our AI predicts the optimal micro-transfer amount based on upcoming expenses, ensuring users never overdraft."
+                  ></textarea>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">CURRENT IMPLEMENTATION LEVEL *</label>
+                  <div className="checkbox-group">
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> Frontend UI/UX
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> Backend / API
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> Database Schema
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> Authentication / Security
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> AI/ML Models
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> Third-party Integrations
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> Testing / QA
+                    </label>
+                    <label className="checkbox-label">
+                      <input type="checkbox" /> Documentation
+                    </label>
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">PROJECT STAGE *</label>
+                  <select className="form-input">
+                    <option value="">-- Select Stage --</option>
+                    <option>Proof of Concept (PoC)</option>
+                    <option>Working Prototype</option>
+                    <option>Alpha Version</option>
+                    <option>Beta Version</option>
+                    <option>MVP Ready</option>
+                    <option>Production Ready</option>
+                  </select>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">GITHUB REPOSITORY LINK *</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="https://github.com/your-username/your-project"
+                  />
+                  <span className="form-hint">⚠ Required: Must have at least a basic implementation</span>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">MARKET RESEARCH / COMPETITOR ANALYSIS</label>
+                  <textarea
+                    className="form-input form-textarea"
+                    placeholder="e.g., Analyzed: Acorns (US - $3B valuation, lacks social features), Plum (UK - AI-based but limited personalization), Revolut Vaults (no gamification). Our edge: Social challenges + predictive AI + DB's trust factor."
+                  ></textarea>
+                </div>
               </div>
 
-              <div style={{ marginTop: "20px" }}>
+              {/* SECTION 6: Other Details */}
+              <div className="form-section">
+                <div className="form-section-header">
+                  <span className="section-number">6</span>
+                  <span className="section-name">OTHER DETAILS</span>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">TEAM COMPOSITION (optional)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g., 2 Full-stack devs, 1 ML engineer, 1 UX designer"
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">DEMO VIDEO / PRESENTATION LINK (optional)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="https://youtube.com/watch?v=... or https://docs.google.com/presentation/..."
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">WHAT DO YOU NEED FROM DB? (optional)</label>
+                  <textarea
+                    className="form-input form-textarea-small"
+                    placeholder="e.g., Access to sandbox API for account data, mentorship from product team, regulatory guidance, potential pilot with 1000 users"
+                  ></textarea>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">ADDITIONAL NOTES</label>
+                  <textarea
+                    className="form-input form-textarea-small"
+                    placeholder="Any other information you'd like to share about your idea..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <div style={{ marginTop: "25px", paddingTop: "20px", borderTop: "2px dashed var(--teletext-cyan)" }}>
                 <button type="button" className="submit-btn ai-btn" onClick={generateMockup}>
-                  🤖 GENEREAZĂ MOCKUP AI
+                  🤖 GENERATE AI MOCKUP
                 </button>
                 <button type="submit" className="submit-btn">
-                  ▶ TRIMITE IDEEA
+                  ▶ SUBMIT IDEA
                 </button>
               </div>
             </form>
 
             <div id="ai-preview" style={{ display: "none", marginTop: "20px" }}>
               <div className="mockup-preview">
-                <div className="mockup-label">◄ AI GENEREAZĂ MOCKUP... ►</div>
+                <div className="mockup-label">◄ AI GENERATING MOCKUP... ►</div>
                 <div className="mockup-frame" id="ai-mockup-frame">
                   <div className="loading">
                     <span style={{ color: "var(--teletext-green)" }}>
-                      PROCESARE AI<span className="loading-dots"></span>
+                      AI PROCESSING<span className="loading-dots"></span>
                     </span>
                   </div>
                 </div>
@@ -366,86 +635,101 @@ export default function HomePage() {
         {/* Tab Content: Top Voted */}
         <div className={`tab-content ${activeTab === "top" ? "active" : ""}`}>
           <div className="content-section">
-            <span className="section-title section-title-yellow">★ TOP 5 IDEI VOTATE</span>
+            <span className="section-title section-title-yellow">★ TOP 5 VOTED IDEAS</span>
 
-            {topIdeas.map((idea, index) => {
-              const medalClass =
-                index === 0
-                  ? "idea-item-gold"
-                  : index === 1
-                  ? "idea-item-silver"
-                  : index === 2
-                  ? "idea-item-bronze"
-                  : "";
-              const medal =
-                index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `#${index + 1}`;
-              const medalColorClass =
-                index === 0
-                  ? "medal-gold"
-                  : index === 1
-                  ? "medal-silver"
-                  : index === 2
-                  ? "medal-bronze"
-                  : "";
+            {loading ? (
+              <div className="loading">
+                <span style={{ color: "var(--teletext-green)" }}>
+                  LOADING<span className="loading-dots"></span>
+                </span>
+              </div>
+            ) : topIdeas.length === 0 ? (
+              <div style={{ padding: "20px", textAlign: "center", color: "var(--teletext-cyan)" }}>
+                <p style={{ fontSize: "24px", marginBottom: "10px" }}>No voted ideas yet.</p>
+                <p style={{ color: "var(--teletext-yellow)" }}>
+                  Add the first idea and get votes from the community!
+                </p>
+              </div>
+            ) : (
+              topIdeas.map((idea, index) => {
+                const medalClass =
+                  index === 0
+                    ? "idea-item-gold"
+                    : index === 1
+                    ? "idea-item-silver"
+                    : index === 2
+                    ? "idea-item-bronze"
+                    : "";
+                const medal =
+                  index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `#${index + 1}`;
+                const medalColorClass =
+                  index === 0
+                    ? "medal-gold"
+                    : index === 1
+                    ? "medal-silver"
+                    : index === 2
+                    ? "medal-bronze"
+                    : "";
 
-              return (
-                <div
-                  key={idea.id}
-                  className={`idea-item ${medalClass}`}
-                  onClick={() => openIdeaModal(idea)}
-                >
-                  <span className={`idea-id ${medalColorClass}`}>{medal}</span>
-                  <span className="idea-title">{idea.title}</span>
-                  <span className={`idea-status ${getStatusClass(idea.status)}`}>
-                    {getStatusLabel(idea.status)}
-                  </span>
-                  <span className="idea-votes">
-                    ▲{" "}
-                    <span className="vote-count" style={{ fontSize: index < 3 ? "24px" : "20px" }}>
-                      {idea.votes}
+                return (
+                  <div
+                    key={idea.id}
+                    className={`idea-item ${medalClass}`}
+                    onClick={() => openIdeaModal(idea)}
+                  >
+                    <span className={`idea-id ${medalColorClass}`}>{medal}</span>
+                    <span className="idea-title">{idea.title}</span>
+                    <span className={`idea-status ${getStatusClass(idea.status)}`}>
+                      {getStatusLabel(idea.status)}
                     </span>
-                  </span>
-                </div>
-              );
-            })}
+                    <span className="idea-votes">
+                      ▲{" "}
+                      <span className="vote-count" style={{ fontSize: index < 3 ? "24px" : "20px" }}>
+                        {idea.votes}
+                      </span>
+                    </span>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
         {/* Tab Content: About */}
         <div className={`tab-content ${activeTab === "about" ? "active" : ""}`}>
           <div className="content-section">
-            <span className="section-title">ℹ DESPRE DB IDEATEXT</span>
+            <span className="section-title">ℹ ABOUT DB IDEATEXT</span>
 
             <div className="about-content">
               <p>
-                <span className="about-highlight">DB IdeaText</span> este platforma de
-                inovație deschisă a Deutsche Bank, unde dezvoltatorii din întreaga lume
-                își pot prezenta ideile folosind estetica retro a serviciului Teletext.
+                <span className="about-highlight">DB IdeaText</span> is Deutsche Bank&apos;s 
+                open innovation platform, where developers from around the world can 
+                present their ideas using the retro aesthetics of the Teletext service.
               </p>
 
               <p style={{ color: "var(--teletext-white)" }}>
-                <span className="about-list-item">Descrie ideea ta în detaliu</span>
+                <span className="about-list-item">Describe your idea in detail</span>
                 <br />
                 <span className="about-list-item">
-                  AI-ul nostru generează automat un mockup vizual
+                  Our AI automatically generates a visual mockup
                 </span>
                 <br />
                 <span className="about-list-item">
-                  Atașează link-ul GitHub cu proiectul tău
+                  Attach your GitHub link with your project
                 </span>
                 <br />
                 <span className="about-list-item">
-                  Comunitatea votează cele mai bune idei
+                  The community votes for the best ideas
                 </span>
                 <br />
                 <span className="about-list-item">
-                  Echipele DB evaluează și adoptă proiecte
+                  DB teams evaluate and adopt projects
                 </span>
               </p>
 
               <p className="about-footer">
-                Indiferent dacă ești student, freelancer sau developer pasionat,
-                ideile tale pot ajunge pe masa decidenților Deutsche Bank!
+                Whether you&apos;re a student, freelancer or passionate developer,
+                your ideas can reach Deutsche Bank decision makers!
               </p>
             </div>
           </div>
@@ -454,9 +738,9 @@ export default function HomePage() {
         {/* Ticker */}
         <div className="ticker">
           <span className="ticker-content">
-            ★ ANUNȚ: Hackathon DB IdeaText - 15-17 Dec 2025 ★ Noua idee #247 primește
-            rapid voturi! ★ Felicitări @retro.dev pentru ideea aprobată! ★ Deutsche
-            Bank caută inovatori - Trimite-ți ideea astăzi! ★
+            ★ Welcome to DB IdeaText! ★ Innovation platform for Deutsche Bank ★ 
+            Add your idea and get feedback from the community! ★ 
+            Use retro Teletext aesthetics to present your project! ★
           </span>
         </div>
 
@@ -492,11 +776,11 @@ export default function HomePage() {
               <div>
                 <div className="modal-title">{selectedIdea.title.split(" - ")[0]}</div>
                 <div className="modal-meta">
-                  Submis de: {selectedIdea.author} | {selectedIdea.date} | ID: #{selectedIdea.id}
+                  Submitted by: {selectedIdea.author} | {selectedIdea.date} | ID: #{selectedIdea.id}
                 </div>
               </div>
               <button className="modal-close" onClick={closeModal}>
-                ✕ ÎNCHIDE
+                ✕ CLOSE
               </button>
             </div>
 
@@ -506,14 +790,14 @@ export default function HomePage() {
                   {getStatusLabel(selectedIdea.status)}
                 </span>
                 <span style={{ marginLeft: "15px", color: "var(--teletext-green)", fontSize: "22px" }}>
-                  ▲ {selectedIdea.votes} voturi
+                  ▲ {selectedIdea.votes} votes
                 </span>
               </div>
 
               <div className="modal-description">{selectedIdea.description}</div>
 
               <div className="mockup-preview">
-                <div className="mockup-label">◄ AI MOCKUP GENERAT ►</div>
+                <div className="mockup-label">◄ AI GENERATED MOCKUP ►</div>
                 <div className="mockup-frame">
                   <div className="mockup-content">
                     <div style={{ color: "#00ff00", fontSize: "14px" }}>
@@ -544,7 +828,7 @@ export default function HomePage() {
                   ⬡ GitHub Repository
                 </a>
                 <button className="submit-btn">▲ VOTE</button>
-                <button className="submit-btn ai-btn">💬 COMENTEAZĂ</button>
+                <button className="submit-btn ai-btn">💬 COMMENT</button>
               </div>
             </div>
           </div>
