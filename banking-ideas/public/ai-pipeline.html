@@ -798,7 +798,7 @@
     </div>
 
     <script>
-        // ===== NODE DEFINITIONS =====
+        // ===== NODE DEFINITIONS - UPDATED FROM REPOSITORY =====
         const nodes = [
             {
                 id: 'input',
@@ -813,13 +813,20 @@
                 description: 'A comprehensive 7-step form that collects all information about the banking innovation idea. Each step focuses on different aspects: basic info, technologies, business context, regulations, differentiators, and additional details.',
                 schema: `const IdeaFormSchema = z.object({
   // Step 1: Basic Info
-  title: z.string().min(5).max(100),
-  shortDescription: z.string(),
-  category: z.enum([...]),
-  problemSolved: z.string(),
+  title: z.string().min(3).max(60),
+  shortDescription: z.string().min(10).max(280),
+  category: z.enum(["payments", "lending", 
+    "investments", "customer-experience", 
+    "security", "open-banking", 
+    "sustainability", "other"]),
+  problemSolved: z.string().min(20),
 
-  // Step 2-7: Technologies, Business, 
-  // Regulations, Differentiators, etc.
+  // Step 2: Technologies
+  aiTechnologies: z.array(z.enum([...])),
+  blockchainTechnologies: z.array(z.enum([...])),
+  otherTechnologies: z.array(z.enum([...])),
+
+  // Step 3-7: Business, Regulations, etc.
   ...
 });`,
                 details: [
@@ -833,13 +840,13 @@
                 id: 'validator',
                 title: 'Validator Agent',
                 subtitle: 'claude-3-haiku',
-                icon: '✅',
+                icon: '🔍',
                 iconClass: 'validator',
                 tags: ['LLM', 'Sequential'],
                 tagTypes: ['llm', 'sequential'],
                 x: 380,
                 y: 280,
-                description: 'Validates, normalizes, and enriches raw form data. Completes missing fields with intelligent values deduced from context. Never leaves fields empty.',
+                description: 'Acts as a FRAUD DETECTOR at Deutsche Bank. Validates, normalizes, and enriches raw form data. Calculates credibility scores, checks banking relevance, detects satirical/fake submissions, and determines maximum possible scores. Never leaves fields empty.',
                 schema: `const ValidatedIdeaSchema = z.object({
   ideaTitle: z.string(),
   bigIdea: z.string(),
@@ -847,11 +854,20 @@
   coreTechnologies: z.array(z.string()),
   applicableRegulations: z.array(z.string()),
   projectStage: z.string(),
-  // ... more fields
+  // ... normalized fields ...
+  
+  // PRE-SCORING FIELDS
+  credibilityScore: z.number().min(0).max(100),
+  bankingRelevance: z.enum([
+    "high", "medium", "low", "none"
+  ]),
+  consistencyIssues: z.array(z.string()),
+  isSatiricalOrFake: z.boolean(),
+  maxPossibleScore: z.number().min(0).max(100)
 });`,
                 details: [
                     { label: 'Model', value: 'claude-3-haiku' },
-                    { label: 'Role', value: 'Data Analyst' },
+                    { label: 'Role', value: 'Fraud Detector' },
                     { label: 'Method', value: 'generateObject()' },
                     { label: 'Execution', value: 'Sequential' }
                 ]
@@ -867,19 +883,25 @@
                 x: 720,
                 y: 60,
                 isParallel: true,
-                description: 'Marketing copywriter that creates compelling headlines, taglines, and identifies key benefits and target audience.',
+                description: 'Acts as a TOP FINTECH COPYWRITER and PITCH EXPERT who has helped secure $500M+ in funding. Creates captivating headlines, punchy taglines, rewrites problems as urgent crises, generates quantifiable benefits, and identifies exact target audience.',
                 schema: `const BasicInfoAnalysisSchema = z.object({
-  headline: z.string(),
-  tagline: z.string(),
-  category: z.string(),
-  problemSummary: z.string(),
-  keyBenefits: z.array(z.string()),
+  headline: z.string()
+    .describe("Captivating headline for the idea"),
+  tagline: z.string()
+    .describe("Short marketing slogan"),
+  category: z.string()
+    .describe("Simplified category (1-2 words)"),
+  problemSummary: z.string()
+    .describe("Problem as an urgent crisis"),
+  keyBenefits: z.array(z.string())
+    .describe("5 concrete, quantifiable benefits"),
   targetAudience: z.string()
+    .describe("Exact description of users & buyers")
 });`,
                 details: [
                     { label: 'Model', value: 'claude-3-haiku' },
-                    { label: 'Role', value: 'Copywriter' },
-                    { label: 'Output', value: 'Headlines' },
+                    { label: 'Role', value: 'Pitch Expert' },
+                    { label: 'Output', value: 'Headlines & Copy' },
                     { label: 'Execution', value: 'Parallel' }
                 ]
             },
@@ -894,18 +916,25 @@
                 x: 720,
                 y: 165,
                 isParallel: true,
-                description: 'CTO-level analysis of the tech stack. Evaluates innovation level and creates accessible tech summary.',
+                description: 'Acts as a TECH LEAD and SOFTWARE ARCHITECT with 15 years of experience in mission-critical banking systems. Analyzes tech stack, suggests complementary technologies, evaluates innovation level, and provides technical recommendations.',
                 schema: `const TechnologiesAnalysisSchema = z.object({
-  primaryTech: z.array(z.string()),
-  techCategory: z.string(),
-  innovationLevel: z.string(),
-  techSummary: z.string(),
+  primaryTech: z.array(z.string())
+    .describe("List of 5-8 key technologies"),
+  techCategory: z.string()
+    .describe("Architectural classification"),
+  innovationLevel: z.enum([
+    "breakthrough", "cutting-edge", 
+    "modern", "traditional"
+  ]).describe("Innovation level assessment"),
+  techSummary: z.string()
+    .describe("100-200 word technical analysis"),
   techBadges: z.array(z.string())
+    .describe("4-6 impressive badges for UI")
 });`,
                 details: [
                     { label: 'Model', value: 'claude-3-haiku' },
-                    { label: 'Role', value: 'CTO' },
-                    { label: 'Evaluates', value: 'Innovation' },
+                    { label: 'Role', value: 'Tech Lead / CTO' },
+                    { label: 'Evaluates', value: 'Innovation Level' },
                     { label: 'Execution', value: 'Parallel' }
                 ]
             },
@@ -920,13 +949,19 @@
                 x: 720,
                 y: 270,
                 isParallel: true,
-                description: 'Analyzes market opportunity, revenue model, scalability, and business value for the bank.',
+                description: 'Analyzes market opportunity with specific numbers and trends, evaluates revenue model with calculations, assesses business value proposition for Deutsche Bank, and determines scalability score.',
                 schema: `const BusinessContextAnalysisSchema = z.object({
-  segment: z.string(),
-  revenueModel: z.string(),
-  marketOpportunity: z.string(),
-  businessValue: z.string(),
-  scalabilityScore: z.string()
+  segment: z.string()
+    .describe("Market segment with size"),
+  revenueModel: z.string()
+    .describe("Detailed revenue model"),
+  marketOpportunity: z.string()
+    .describe("Opportunity with numbers/trends"),
+  businessValue: z.string()
+    .describe("Value proposition for DB"),
+  scalabilityScore: z.enum([
+    "massive", "high", "medium", "limited"
+  ]).describe("Scalability assessment")
 });`,
                 details: [
                     { label: 'Model', value: 'claude-3-haiku' },
@@ -946,17 +981,24 @@
                 x: 720,
                 y: 375,
                 isParallel: true,
-                description: 'Evaluates regulatory compliance (GDPR, PSD2, DORA, AML), identifies risks, and provides recommendations.',
+                description: 'Acts as a COMPLIANCE OFFICER and REGULATORY EXPERT with 20 years of experience in European banking. Evaluates compliance status, identifies all applicable regulations (GDPR, PSD2, DORA, AML, MiFID II, etc.), assesses risk level, and provides actionable compliance guidance.',
                 schema: `const RegulationsAnalysisSchema = z.object({
-  complianceStatus: z.string(),
-  keyRegulations: z.array(z.string()),
-  riskLevel: z.string(),
+  complianceStatus: z.enum([
+    "compliant", "partial", 
+    "needs-review", "non-compliant"
+  ]).describe("Compliance status assessment"),
+  keyRegulations: z.array(z.string())
+    .describe("Complete list of regulations"),
+  riskLevel: z.enum([
+    "low", "medium", "high", "critical"
+  ]).describe("Regulatory risk level"),
   complianceSummary: z.string()
+    .describe("150-250 word actionable analysis")
 });`,
                 details: [
                     { label: 'Model', value: 'claude-3-haiku' },
-                    { label: 'Role', value: 'Compliance' },
-                    { label: 'Checks', value: 'GDPR, PSD2' },
+                    { label: 'Role', value: 'Compliance Officer' },
+                    { label: 'Checks', value: 'GDPR, PSD2, DORA' },
                     { label: 'Execution', value: 'Parallel' }
                 ]
             },
@@ -971,18 +1013,26 @@
                 x: 720,
                 y: 480,
                 isParallel: true,
-                description: 'Identifies unique selling points, competitive advantages, and evaluates production readiness.',
+                description: 'Rewrites unique value proposition as a compelling 30-second pitch, identifies sustainable competitive moat, honestly evaluates production readiness level, and generates implementation badges showing what is ready.',
                 schema: `const DifferentiatorsAnalysisSchema = z.object({
-  uniqueSellingPoint: z.string(),
-  competitiveAdvantage: z.string(),
-  readinessLevel: z.string(),
-  implementationBadges: z.array(z.string()),
+  uniqueSellingPoint: z.string()
+    .describe("30-second pitch rewrite"),
+  competitiveAdvantage: z.string()
+    .describe("Sustainable competitive moat"),
+  readinessLevel: z.enum([
+    "production-ready", "beta", 
+    "working-prototype", 
+    "proof-of-concept", "concept"
+  ]).describe("Maturity assessment"),
+  implementationBadges: z.array(z.string())
+    .describe("4-6 badges showing what's ready"),
   githubAvailable: z.boolean()
+    .describe("Whether GitHub link exists")
 });`,
                 details: [
                     { label: 'Model', value: 'claude-3-haiku' },
-                    { label: 'Role', value: 'Product' },
-                    { label: 'Output', value: 'USP' },
+                    { label: 'Role', value: 'Product Manager' },
+                    { label: 'Output', value: 'USP & Readiness' },
                     { label: 'Execution', value: 'Parallel' }
                 ]
             },
@@ -997,17 +1047,21 @@
                 x: 720,
                 y: 585,
                 isParallel: true,
-                description: 'Analyzes team composition, demo availability, support needs, and additional highlights.',
+                description: 'Acts as a PROGRAM MANAGER for a startup accelerator at Deutsche Bank. Evaluates team composition with commentary, identifies concrete support needed from DB, and highlights additional strengths for the pitch.',
                 schema: `const OtherDetailsAnalysisSchema = z.object({
-  teamSize: z.string(),
-  hasDemo: z.boolean(),
-  supportNeeded: z.array(z.string()),
+  teamSize: z.string()
+    .describe("Team evaluation with commentary"),
+  hasDemo: z.boolean()
+    .describe("Whether demo exists"),
+  supportNeeded: z.array(z.string())
+    .describe("4-6 types of support from DB"),
   additionalHighlights: z.array(z.string())
+    .describe("4-6 additional pitch strengths")
 });`,
                 details: [
                     { label: 'Model', value: 'claude-3-haiku' },
-                    { label: 'Role', value: 'PM' },
-                    { label: 'Output', value: 'Resources' },
+                    { label: 'Role', value: 'Program Manager' },
+                    { label: 'Output', value: 'Team & Resources' },
                     { label: 'Execution', value: 'Parallel' }
                 ]
             },
@@ -1023,13 +1077,13 @@
                 y: 280,
                 description: 'Pure function (NO LLM) that merges all 6 analysis results into a single structured object. Zero cost, instant execution.',
                 code: `export function aggregateAnalyses(
-  validatedData,
-  basicInfo,
-  technologies,
-  businessContext,
-  regulations,
-  differentiators,
-  otherDetails
+  validatedData: ValidatedIdea,
+  basicInfo: BasicInfoAnalysis,
+  technologies: TechnologiesAnalysis,
+  businessContext: BusinessContextAnalysis,
+  regulations: RegulationsAnalysis,
+  differentiators: DifferentiatorsAnalysis,
+  otherDetails: OtherDetailsAnalysis
 ): AggregatedData {
   return {
     basicInfo,
@@ -1058,23 +1112,36 @@
                 tagTypes: ['llm', 'sequential'],
                 x: 1360,
                 y: 280,
-                description: 'Content strategist that creates page structure, sections, and CTAs to sell the idea to decision makers.',
+                description: 'Acts as a CONTENT STRATEGIST for a top consulting firm. Creates compelling page structure with sections (hero, features, tech, business, social-proof, CTA), generates headlines and content that sells the idea to decision makers.',
                 schema: `const HTMLBuilderOutputSchema = z.object({
   pageTitle: z.string(),
   sections: z.array(z.object({
     id: z.string(),
-    type: z.string(),
-    content: z.object({...})
+    type: z.enum([
+      "hero", "features", "tech", 
+      "business", "social-proof", "cta"
+    ]),
+    content: z.object({
+      title: z.string(),
+      subtitle: z.string().optional(),
+      items: z.array(z.string()).optional(),
+      badges: z.array(z.string()).optional(),
+      highlight: z.string().optional()
+    })
   })),
   callToAction: z.object({
     primary: z.string(),
     secondary: z.string().optional()
   }),
-  metadata: z.object({...})
+  metadata: z.object({
+    category: z.string(),
+    readinessLevel: z.string(),
+    innovationLevel: z.string()
+  })
 });`,
                 details: [
                     { label: 'Model', value: 'claude-3-haiku' },
-                    { label: 'Role', value: 'Content' },
+                    { label: 'Role', value: 'Content Strategist' },
                     { label: 'Output', value: 'Page Structure' },
                     { label: 'Execution', value: 'Sequential' }
                 ]
@@ -1089,26 +1156,31 @@
                 tagTypes: ['llm', 'sequential'],
                 x: 1680,
                 y: 280,
-                description: 'Investment committee evaluation on 5 axes: Innovation, Feasibility, Business Value, Compliance, and Readiness.',
+                description: 'Acts as a SENIOR INVESTMENT COMMITTEE MEMBER at Deutsche Bank. Uses pre-scoring results (credibility, banking relevance, maxPossibleScore) from validator to cap scores. Evaluates on 5 axes: Innovation, Feasibility, Business Value, Compliance, and Readiness. Provides final recommendation.',
                 schema: `const StatisticsOutputSchema = z.object({
-  overallScore: z.number(),
+  overallScore: z.number().min(0).max(100)
+    .describe("Weighted average, capped by maxPossibleScore"),
   categoryScores: z.object({
-    innovation: z.number(),
-    feasibility: z.number(),
-    businessValue: z.number(),
-    compliance: z.number(),
-    readiness: z.number()
+    innovation: z.number().min(0).max(100),
+    feasibility: z.number().min(0).max(100),
+    businessValue: z.number().min(0).max(100),
+    compliance: z.number().min(0).max(100),
+    readiness: z.number().min(0).max(100)
   }),
-  strengths: z.array(z.string()),
-  improvements: z.array(z.string()),
-  recommendation: z.enum([...]),
+  strengths: z.array(z.string()).min(1).max(5),
+  improvements: z.array(z.string()).min(1).max(5),
+  recommendation: z.enum([
+    "highly-recommended", "recommended",
+    "consider", "needs-work", "not-recommended"
+  ]),
   summaryText: z.string()
+    .describe("Executive summary for committee")
 });`,
                 details: [
                     { label: 'Model', value: 'claude-3-haiku' },
-                    { label: 'Role', value: 'Evaluator' },
-                    { label: 'Scoring', value: '5 Axes' },
-                    { label: 'Output', value: 'Verdict' }
+                    { label: 'Role', value: 'Investment Committee' },
+                    { label: 'Scoring', value: '5 Axes + Cap' },
+                    { label: 'Output', value: 'Final Verdict' }
                 ]
             },
             {
@@ -1121,25 +1193,38 @@
                 tagTypes: ['function', 'sequential'],
                 x: 2000,
                 y: 280,
-                description: 'Pure function that generates the complete HTML page with all data, scores, and styling. Zero LLM cost.',
+                description: 'Pure function that generates the complete Teletext-style HTML page with all data, scores, and styling. Uses VT323 monospace font, dark blue background (#0000AA), and classic teletext colors (cyan, yellow, magenta, green). Zero LLM cost.',
                 code: `export function designVisualOutput(
   data: AggregatedData,
   htmlContent: HTMLBuilderOutput,
   statistics: StatisticsOutput,
   originalTitle: string
-): VisualOutput {
-  const html = \`
-    <div>
-      <!-- Full HTML page -->
-    </div>
-  \`;
-  return { pages, htmlOutput: html };
+): FinalVisualOutput {
+  
+  // Utility functions
+  const scoreColor = (score: number) => 
+    score >= 70 ? "#00FF00" : 
+    score >= 50 ? "#FFFF00" : "#FF6600";
+  
+  const makeProgressBar = (score: number) => {
+    const filled = Math.round(score / 10);
+    return "[" + "█".repeat(filled) + 
+           "░".repeat(10-filled) + "] " + score + "%";
+  };
+
+  // Generate full HTML with teletext styling
+  const html = \`<div style="font-family:'VT323',
+    monospace;background:#0000AA;...">
+    <!-- Full Teletext HTML -->
+  </div>\`;
+  
+  return { pages, htmlOutput: html, cssVariables };
 }`,
                 details: [
                     { label: 'Type', value: 'Pure Function' },
                     { label: 'LLM Cost', value: '$0' },
-                    { label: 'Output', value: 'Full HTML' },
-                    { label: 'Style', value: 'Dark Theme' }
+                    { label: 'Output', value: 'Teletext HTML' },
+                    { label: 'Style', value: 'VT323 / Blue BG' }
                 ]
             },
             {
@@ -1152,8 +1237,18 @@
                 tagTypes: ['function', 'sequential'],
                 x: 2320,
                 y: 280,
-                description: 'The final output - a complete HTML page stored in PostgreSQL and displayed to the user with all analysis and scores.',
-                schema: `interface PipelineResult {
+                description: 'The final output - a complete Teletext-style HTML page stored in PostgreSQL (generatedHtml, aiScore, aiAnalysis, aiRecommendation fields) and displayed to the user with all analysis and scores.',
+                schema: `// Database Schema (ideas table)
+generatedPages: text("generated_pages"), // JSON
+generatedHtml: text("generated_html"),   // Full HTML
+aiScore: integer("ai_score"),            // 0-100
+aiAnalysis: text("ai_analysis"),         // JSON
+aiRecommendation: text("ai_recommendation"),
+  // "highly-recommended" | "recommended" | 
+  // "consider" | "needs-work" | "not-recommended"
+
+// Pipeline Result Interface
+interface PipelineResult {
   success: boolean;
   validatedData: ValidatedIdea;
   aggregatedAnalysis: AggregatedData;
@@ -1161,13 +1256,14 @@
   visualOutput: {
     pages: TeletextPage[];
     htmlOutput: string;
+    cssVariables: object;
   };
 }`,
                 details: [
                     { label: 'Storage', value: 'PostgreSQL' },
-                    { label: 'Format', value: 'HTML' },
+                    { label: 'Format', value: 'Teletext HTML' },
                     { label: 'Access', value: '/ideas/[id]' },
-                    { label: 'Cache', value: 'On-demand' }
+                    { label: 'Fields', value: '5 AI columns' }
                 ]
             }
         ];
@@ -1425,12 +1521,12 @@
             
             const steps = [
                 { ids: ['input'], msg: 'Processing form input...', pct: 8 },
-                { ids: ['validator'], msg: 'Validating data...', pct: 18 },
+                { ids: ['validator'], msg: 'Validating & fraud detection...', pct: 18 },
                 { ids: ['basic', 'tech', 'business', 'regulations', 'differentiators', 'other'], msg: 'Running 6 analyzers in parallel...', pct: 55, parallel: true },
                 { ids: ['aggregator'], msg: 'Aggregating analyses...', pct: 65 },
                 { ids: ['htmlbuilder'], msg: 'Building HTML structure...', pct: 75 },
-                { ids: ['statistician'], msg: 'Calculating scores...', pct: 85 },
-                { ids: ['visual'], msg: 'Designing output...', pct: 95 },
+                { ids: ['statistician'], msg: 'Calculating scores (with caps)...', pct: 85 },
+                { ids: ['visual'], msg: 'Designing Teletext output...', pct: 95 },
                 { ids: ['output'], msg: 'Complete!', pct: 100 }
             ];
             

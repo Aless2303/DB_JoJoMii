@@ -414,6 +414,7 @@ interface Idea {
   githubLink: string;
   createdAt: string;
   userName?: string;
+  commentCount?: number;
   // AI Generated fields
   generatedHtml?: string | null;
   generatedPages?: string | null;
@@ -840,6 +841,14 @@ export default function HomePage() {
         const data = await response.json();
         setComments(prev => [...prev, data]);
         setNewComment("");
+        // Update comment count in ideas list and selectedIdea
+        const newCount = (selectedIdea.commentCount || 0) + 1;
+        setIdeas(prev => prev.map(idea => 
+          idea.id === selectedIdea.id 
+            ? { ...idea, commentCount: newCount }
+            : idea
+        ));
+        setSelectedIdea(prev => prev ? { ...prev, commentCount: newCount } : null);
       } else {
         const error = await response.json();
         alert(error.error || "Failed to post comment");
@@ -2167,7 +2176,7 @@ export default function HomePage() {
                   className="submit-btn ai-btn"
                   onClick={toggleComments}
                 >
-                  💬 {showComments ? "HIDE" : "SHOW"} COMMENTS ({comments.length})
+                  💬 {showComments ? "HIDE" : "SHOW"} COMMENTS ({showComments ? comments.length : (selectedIdea.commentCount || 0)})
                 </button>
                 {isAdmin && (
                   <>

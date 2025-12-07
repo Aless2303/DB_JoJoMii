@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, generateId } from "@/lib/db";
-import { ideas, users } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { ideas, users, comments } from "@/lib/db/schema";
+import { eq, desc, sql } from "drizzle-orm";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { runAIPipeline, parseMarkdownInput } from "@/lib/ai/orchestrator";
@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");
 
+    // First get all ideas
     const result = await db
       .select({
         id: ideas.id,
@@ -56,8 +57,28 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
+    // Get comment counts for all ideas
+    const commentCounts = await db
+      .select({
+        ideaId: comments.ideaId,
+        count: sql<number>`count(*)::int`.as('count'),
+      })
+      .from(comments)
+      .groupBy(comments.ideaId);
+
+    // Create a map of ideaId -> commentCount
+    const commentCountMap = new Map(
+      commentCounts.map(c => [c.ideaId, c.count])
+    );
+
+    // Add commentCount to each idea
+    const ideasWithComments = result.map(idea => ({
+      ...idea,
+      commentCount: commentCountMap.get(idea.id) || 0,
+    }));
+
     return NextResponse.json({
-      ideas: result,
+      ideas: ideasWithComments,
       pagination: { limit, offset },
     });
   } catch (error) {
