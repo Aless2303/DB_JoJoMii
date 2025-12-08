@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -58,7 +59,9 @@
             font-size: 16px;
         }
 
-        .logo span { color: #a371f7; }
+        .logo span {
+            color: #a371f7;
+        }
 
         .divider {
             width: 1px;
@@ -97,9 +100,17 @@
             border-radius: 50%;
         }
 
-        .pill-dot.green { background: #3fb950; }
-        .pill-dot.blue { background: #58a6ff; }
-        .pill-dot.purple { background: #a371f7; }
+        .pill-dot.green {
+            background: #3fb950;
+        }
+
+        .pill-dot.blue {
+            background: #58a6ff;
+        }
+
+        .pill-dot.purple {
+            background: #a371f7;
+        }
 
         .header-right {
             display: flex;
@@ -154,7 +165,7 @@
             flex: 1;
             position: relative;
             overflow: hidden;
-            background: 
+            background:
                 radial-gradient(circle at center, #161b22 0%, #0d1117 100%),
                 repeating-linear-gradient(#21262d 0 1px, transparent 1px 100%),
                 repeating-linear-gradient(90deg, #21262d 0 1px, transparent 1px 100%);
@@ -180,27 +191,75 @@
             z-index: 1;
         }
 
+        /* ===== ANIMATED DASHED CONNECTION PATHS ===== */
         .connection-path {
             fill: none;
             stroke: #30363d;
             stroke-width: 2;
+            stroke-dasharray: 8 6;
+            animation: flowDash 1s linear infinite;
+        }
+
+        @keyframes flowDash {
+            0% {
+                stroke-dashoffset: 28;
+            }
+
+            100% {
+                stroke-dashoffset: 0;
+            }
         }
 
         .connection-path.active {
             stroke: #f0883e;
             stroke-width: 3;
-            filter: drop-shadow(0 0 6px rgba(240, 136, 62, 0.5));
+            stroke-dasharray: 12 8;
+            filter: drop-shadow(0 0 8px rgba(240, 136, 62, 0.7));
+            animation: flowDashActive 0.4s linear infinite;
+        }
+
+        @keyframes flowDashActive {
+            0% {
+                stroke-dashoffset: 40;
+            }
+
+            100% {
+                stroke-dashoffset: 0;
+            }
         }
 
         .connection-path.completed {
             stroke: #3fb950;
             stroke-width: 2;
+            stroke-dasharray: 8 6;
+            filter: drop-shadow(0 0 4px rgba(63, 185, 80, 0.5));
+            animation: flowDashCompleted 0.8s linear infinite;
         }
 
-        /* Animated flow dots */
+        @keyframes flowDashCompleted {
+            0% {
+                stroke-dashoffset: 28;
+            }
+
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        /* Animated flow dots - particles moving along paths */
         .flow-dot {
             fill: #58a6ff;
-            filter: drop-shadow(0 0 4px rgba(88, 166, 255, 0.8));
+            filter: drop-shadow(0 0 6px rgba(88, 166, 255, 0.9));
+        }
+
+        .flow-dot.active {
+            fill: #f0883e;
+            filter: drop-shadow(0 0 8px rgba(240, 136, 62, 0.9));
+        }
+
+        .flow-dot.completed {
+            fill: #3fb950;
+            filter: drop-shadow(0 0 6px rgba(63, 185, 80, 0.9));
         }
 
         /* ===== NODES CONTAINER ===== */
@@ -250,8 +309,15 @@
         }
 
         @keyframes nodeGlow {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(240, 136, 62, 0.4), 0 4px 12px rgba(0, 0, 0, 0.4); }
-            50% { box-shadow: 0 0 0 8px rgba(240, 136, 62, 0), 0 4px 12px rgba(0, 0, 0, 0.4); }
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(240, 136, 62, 0.4), 0 4px 12px rgba(0, 0, 0, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 8px rgba(240, 136, 62, 0), 0 4px 12px rgba(0, 0, 0, 0.4);
+            }
         }
 
         /* Node Header */
@@ -275,14 +341,37 @@
             flex-shrink: 0;
         }
 
-        .node-icon.input { background: linear-gradient(135deg, #388bfd, #1f6feb); }
-        .node-icon.validator { background: linear-gradient(135deg, #3fb950, #238636); }
-        .node-icon.analyzer { background: linear-gradient(135deg, #a371f7, #8957e5); }
-        .node-icon.aggregator { background: linear-gradient(135deg, #f0883e, #d29922); }
-        .node-icon.builder { background: linear-gradient(135deg, #f778ba, #db61a2); }
-        .node-icon.stats { background: linear-gradient(135deg, #79c0ff, #58a6ff); }
-        .node-icon.visual { background: linear-gradient(135deg, #7ee787, #56d364); }
-        .node-icon.output { background: linear-gradient(135deg, #a371f7, #8957e5); }
+        .node-icon.input {
+            background: linear-gradient(135deg, #388bfd, #1f6feb);
+        }
+
+        .node-icon.validator {
+            background: linear-gradient(135deg, #3fb950, #238636);
+        }
+
+        .node-icon.analyzer {
+            background: linear-gradient(135deg, #a371f7, #8957e5);
+        }
+
+        .node-icon.aggregator {
+            background: linear-gradient(135deg, #f0883e, #d29922);
+        }
+
+        .node-icon.builder {
+            background: linear-gradient(135deg, #f778ba, #db61a2);
+        }
+
+        .node-icon.stats {
+            background: linear-gradient(135deg, #79c0ff, #58a6ff);
+        }
+
+        .node-icon.visual {
+            background: linear-gradient(135deg, #7ee787, #56d364);
+        }
+
+        .node-icon.output {
+            background: linear-gradient(135deg, #a371f7, #8957e5);
+        }
 
         .node-info {
             flex: 1;
@@ -380,8 +469,13 @@
             transition: all 0.15s;
         }
 
-        .connection-point.left { left: -7px; }
-        .connection-point.right { right: -7px; }
+        .connection-point.left {
+            left: -7px;
+        }
+
+        .connection-point.right {
+            right: -7px;
+        }
 
         .node:hover .connection-point,
         .node.selected .connection-point {
@@ -592,8 +686,15 @@
         }
 
         @keyframes slideUp {
-            from { transform: translateX(-50%) translateY(20px); opacity: 0; }
-            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+            from {
+                transform: translateX(-50%) translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
         }
 
         .progress-header {
@@ -660,46 +761,93 @@
             border-color: #8b949e;
         }
 
-        /* ===== MINIMAP ===== */
-        .minimap {
+        /* ===== FLOW LEGEND ===== */
+        .flow-legend {
             position: absolute;
             bottom: 24px;
             left: 24px;
-            width: 160px;
-            height: 100px;
             background: #161b22;
             border: 1px solid #30363d;
             border-radius: 8px;
-            overflow: hidden;
+            padding: 12px 16px;
             z-index: 10;
         }
 
-        .minimap-content {
-            width: 100%;
-            height: 100%;
-            position: relative;
+        .legend-title {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #8b949e;
+            margin-bottom: 8px;
         }
 
-        .minimap-node {
-            position: absolute;
-            background: #58a6ff;
-            border-radius: 2px;
+        .legend-items {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
 
-        .minimap-viewport {
-            position: absolute;
-            border: 2px solid #a371f7;
-            background: rgba(163, 113, 247, 0.1);
-            border-radius: 2px;
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: #c9d1d9;
+        }
+
+        .legend-line {
+            width: 30px;
+            height: 2px;
+            border-radius: 1px;
+        }
+
+        .legend-line.idle {
+            background: repeating-linear-gradient(90deg,
+                    #30363d 0px,
+                    #30363d 8px,
+                    transparent 8px,
+                    transparent 14px);
+        }
+
+        .legend-line.active {
+            background: repeating-linear-gradient(90deg,
+                    #f0883e 0px,
+                    #f0883e 12px,
+                    transparent 12px,
+                    transparent 20px);
+            box-shadow: 0 0 6px rgba(240, 136, 62, 0.5);
+        }
+
+        .legend-line.completed {
+            background: repeating-linear-gradient(90deg,
+                    #3fb950 0px,
+                    #3fb950 8px,
+                    transparent 8px,
+                    transparent 14px);
+            box-shadow: 0 0 4px rgba(63, 185, 80, 0.5);
         }
 
         /* Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0d1117; }
-        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #484f58; }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0d1117;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #484f58;
+        }
     </style>
 </head>
+
 <body>
     <!-- Header -->
     <header class="header">
@@ -744,13 +892,13 @@
             <svg class="connections-svg" id="connectionsSvg">
                 <defs>
                     <marker id="arrowhead" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto">
-                        <path d="M0,0 L12,4 L0,8 L3,4 Z" fill="#30363d"/>
+                        <path d="M0,0 L12,4 L0,8 L3,4 Z" fill="#30363d" />
                     </marker>
                     <marker id="arrowhead-active" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto">
-                        <path d="M0,0 L12,4 L0,8 L3,4 Z" fill="#f0883e"/>
+                        <path d="M0,0 L12,4 L0,8 L3,4 Z" fill="#f0883e" />
                     </marker>
                     <marker id="arrowhead-completed" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto">
-                        <path d="M0,0 L12,4 L0,8 L3,4 Z" fill="#3fb950"/>
+                        <path d="M0,0 L12,4 L0,8 L3,4 Z" fill="#3fb950" />
                     </marker>
                 </defs>
             </svg>
@@ -763,6 +911,25 @@
                 </div>
 
                 <!-- Nodes will be created by JavaScript -->
+            </div>
+
+            <!-- Flow Legend -->
+            <div class="flow-legend">
+                <div class="legend-title">Flow Status</div>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <div class="legend-line idle"></div>
+                        <span>Idle</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-line active"></div>
+                        <span>Processing</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-line completed"></div>
+                        <span>Completed</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Zoom Controls -->
@@ -901,40 +1068,40 @@
                 details: [
                     { label: 'Model', value: 'claude-3-haiku' },
                     { label: 'Role', value: 'Pitch Expert' },
-                    { label: 'Output', value: 'Headlines & Copy' },
+                    { label: 'Method', value: 'generateObject()' },
                     { label: 'Execution', value: 'Parallel' }
                 ]
             },
             {
                 id: 'tech',
-                title: 'Technologies Analyzer',
+                title: 'Tech Stack Analyzer',
                 subtitle: 'claude-3-haiku',
-                icon: '⚡',
+                icon: '⚙️',
                 iconClass: 'analyzer',
                 tags: ['LLM', 'Parallel'],
                 tagTypes: ['llm', 'parallel'],
                 x: 720,
-                y: 165,
+                y: 160,
                 isParallel: true,
-                description: 'Acts as a TECH LEAD and SOFTWARE ARCHITECT with 15 years of experience in mission-critical banking systems. Analyzes tech stack, suggests complementary technologies, evaluates innovation level, and provides technical recommendations.',
-                schema: `const TechnologiesAnalysisSchema = z.object({
-  primaryTech: z.array(z.string())
-    .describe("List of 5-8 key technologies"),
-  techCategory: z.string()
-    .describe("Architectural classification"),
+                description: 'Acts as a CHIEF TECHNOLOGY OFFICER of a major fintech with 20 years experience. Assesses technology stack, identifies cutting-edge tech, evaluates integration complexity, scalability potential, and technical risks.',
+                schema: `const TechAnalysisSchema = z.object({
+  techStack: z.array(z.string())
+    .describe("Core technologies"),
   innovationLevel: z.enum([
-    "breakthrough", "cutting-edge", 
-    "modern", "traditional"
-  ]).describe("Innovation level assessment"),
+    "revolutionary", "innovative", 
+    "standard", "outdated"
+  ]),
+  integrationComplexity: z.enum([
+    "low", "medium", "high", "extreme"
+  ]),
+  scalabilityScore: z.number().min(0).max(100),
+  technicalRisks: z.array(z.string()),
   techSummary: z.string()
-    .describe("100-200 word technical analysis"),
-  techBadges: z.array(z.string())
-    .describe("4-6 impressive badges for UI")
 });`,
                 details: [
                     { label: 'Model', value: 'claude-3-haiku' },
-                    { label: 'Role', value: 'Tech Lead / CTO' },
-                    { label: 'Evaluates', value: 'Innovation Level' },
+                    { label: 'Role', value: 'CTO Expert' },
+                    { label: 'Method', value: 'generateObject()' },
                     { label: 'Execution', value: 'Parallel' }
                 ]
             },
@@ -947,26 +1114,25 @@
                 tags: ['LLM', 'Parallel'],
                 tagTypes: ['llm', 'parallel'],
                 x: 720,
-                y: 270,
+                y: 260,
                 isParallel: true,
-                description: 'Analyzes market opportunity with specific numbers and trends, evaluates revenue model with calculations, assesses business value proposition for Deutsche Bank, and determines scalability score.',
-                schema: `const BusinessContextAnalysisSchema = z.object({
-  segment: z.string()
-    .describe("Market segment with size"),
-  revenueModel: z.string()
-    .describe("Detailed revenue model"),
-  marketOpportunity: z.string()
-    .describe("Opportunity with numbers/trends"),
-  businessValue: z.string()
-    .describe("Value proposition for DB"),
-  scalabilityScore: z.enum([
-    "massive", "high", "medium", "limited"
-  ]).describe("Scalability assessment")
+                description: 'Acts as a McKINSEY SENIOR PARTNER with 25 years in banking strategy. Analyzes market opportunity, competitive landscape, revenue potential, strategic alignment with Deutsche Bank goals, and implementation timeline.',
+                schema: `const BusinessAnalysisSchema = z.object({
+  marketOpportunity: z.enum([
+    "massive", "large", "medium", "niche"
+  ]),
+  competitiveAdvantage: z.string(),
+  revenueModel: z.string(),
+  implementationCost: z.enum([
+    "low", "medium", "high", "very-high"
+  ]),
+  strategicAlignment: z.number().min(0).max(100),
+  businessSummary: z.string()
 });`,
                 details: [
                     { label: 'Model', value: 'claude-3-haiku' },
-                    { label: 'Role', value: 'Strategist' },
-                    { label: 'Output', value: 'Market Analysis' },
+                    { label: 'Role', value: 'Strategy Partner' },
+                    { label: 'Method', value: 'generateObject()' },
                     { label: 'Execution', value: 'Parallel' }
                 ]
             },
@@ -979,26 +1145,25 @@
                 tags: ['LLM', 'Parallel'],
                 tagTypes: ['llm', 'parallel'],
                 x: 720,
-                y: 375,
+                y: 360,
                 isParallel: true,
-                description: 'Acts as a COMPLIANCE OFFICER and REGULATORY EXPERT with 20 years of experience in European banking. Evaluates compliance status, identifies all applicable regulations (GDPR, PSD2, DORA, AML, MiFID II, etc.), assesses risk level, and provides actionable compliance guidance.',
+                description: 'Acts as a HEAD OF COMPLIANCE at a European bank. Analyzes regulatory implications (PSD2, GDPR, MiFID II, etc.), identifies compliance risks, required certifications, and regulatory timeline.',
                 schema: `const RegulationsAnalysisSchema = z.object({
-  complianceStatus: z.enum([
-    "compliant", "partial", 
-    "needs-review", "non-compliant"
-  ]).describe("Compliance status assessment"),
-  keyRegulations: z.array(z.string())
-    .describe("Complete list of regulations"),
-  riskLevel: z.enum([
+  applicableRegulations: z.array(z.string()),
+  complianceRisk: z.enum([
     "low", "medium", "high", "critical"
-  ]).describe("Regulatory risk level"),
-  complianceSummary: z.string()
-    .describe("150-250 word actionable analysis")
+  ]),
+  requiredCertifications: z.array(z.string()),
+  regulatoryTimeline: z.string(),
+  complianceSummary: z.string(),
+  dataPrivacyImpact: z.enum([
+    "minimal", "moderate", "significant"
+  ])
 });`,
                 details: [
                     { label: 'Model', value: 'claude-3-haiku' },
-                    { label: 'Role', value: 'Compliance Officer' },
-                    { label: 'Checks', value: 'GDPR, PSD2, DORA' },
+                    { label: 'Role', value: 'Compliance Head' },
+                    { label: 'Method', value: 'generateObject()' },
                     { label: 'Execution', value: 'Parallel' }
                 ]
             },
@@ -1011,176 +1176,175 @@
                 tags: ['LLM', 'Parallel'],
                 tagTypes: ['llm', 'parallel'],
                 x: 720,
-                y: 480,
+                y: 460,
                 isParallel: true,
-                description: 'Rewrites unique value proposition as a compelling 30-second pitch, identifies sustainable competitive moat, honestly evaluates production readiness level, and generates implementation badges showing what is ready.',
+                description: 'Acts as a VENTURE CAPITALIST who has seen 10,000+ pitches. Identifies unique value propositions, competitive moats, innovation factors, and what makes this idea stand out from existing solutions.',
                 schema: `const DifferentiatorsAnalysisSchema = z.object({
-  uniqueSellingPoint: z.string()
-    .describe("30-second pitch rewrite"),
-  competitiveAdvantage: z.string()
-    .describe("Sustainable competitive moat"),
-  readinessLevel: z.enum([
-    "production-ready", "beta", 
-    "working-prototype", 
-    "proof-of-concept", "concept"
-  ]).describe("Maturity assessment"),
-  implementationBadges: z.array(z.string())
-    .describe("4-6 badges showing what's ready"),
-  githubAvailable: z.boolean()
-    .describe("Whether GitHub link exists")
+  uniqueValueProp: z.string(),
+  competitiveMoat: z.enum([
+    "strong", "moderate", "weak", "none"
+  ]),
+  innovationScore: z.number().min(0).max(100),
+  marketDifferentiators: z.array(z.string()),
+  patentPotential: z.boolean(),
+  disruptionLevel: z.enum([
+    "disruptive", "evolutionary", "incremental"
+  ])
 });`,
                 details: [
                     { label: 'Model', value: 'claude-3-haiku' },
-                    { label: 'Role', value: 'Product Manager' },
-                    { label: 'Output', value: 'USP & Readiness' },
+                    { label: 'Role', value: 'VC Expert' },
+                    { label: 'Method', value: 'generateObject()' },
                     { label: 'Execution', value: 'Parallel' }
                 ]
             },
             {
                 id: 'other',
-                title: 'Other Details Analyzer',
+                title: 'Other Aspects Analyzer',
                 subtitle: 'claude-3-haiku',
-                icon: '📎',
+                icon: '🔮',
                 iconClass: 'analyzer',
                 tags: ['LLM', 'Parallel'],
                 tagTypes: ['llm', 'parallel'],
                 x: 720,
-                y: 585,
+                y: 560,
                 isParallel: true,
-                description: 'Acts as a PROGRAM MANAGER for a startup accelerator at Deutsche Bank. Evaluates team composition with commentary, identifies concrete support needed from DB, and highlights additional strengths for the pitch.',
-                schema: `const OtherDetailsAnalysisSchema = z.object({
-  teamSize: z.string()
-    .describe("Team evaluation with commentary"),
-  hasDemo: z.boolean()
-    .describe("Whether demo exists"),
-  supportNeeded: z.array(z.string())
-    .describe("4-6 types of support from DB"),
-  additionalHighlights: z.array(z.string())
-    .describe("4-6 additional pitch strengths")
+                description: 'Acts as a FUTURIST and INNOVATION DIRECTOR. Analyzes future potential, sustainability impact, social benefits, potential partnerships, and long-term vision for the idea.',
+                schema: `const OtherAspectsSchema = z.object({
+  futurePotential: z.enum([
+    "transformative", "high", "moderate", "limited"
+  ]),
+  sustainabilityImpact: z.enum([
+    "positive", "neutral", "negative"
+  ]),
+  socialBenefits: z.array(z.string()),
+  potentialPartners: z.array(z.string()),
+  longTermVision: z.string(),
+  additionalInsights: z.string()
 });`,
                 details: [
                     { label: 'Model', value: 'claude-3-haiku' },
-                    { label: 'Role', value: 'Program Manager' },
-                    { label: 'Output', value: 'Team & Resources' },
+                    { label: 'Role', value: 'Futurist' },
+                    { label: 'Method', value: 'generateObject()' },
                     { label: 'Execution', value: 'Parallel' }
                 ]
             },
             {
                 id: 'aggregator',
-                title: 'Aggregator',
+                title: 'Analysis Aggregator',
                 subtitle: 'Pure Function',
-                icon: '🔀',
+                icon: '🔄',
                 iconClass: 'aggregator',
-                tags: ['No LLM', 'Merge'],
+                tags: ['Function', 'Sequential'],
                 tagTypes: ['function', 'sequential'],
                 x: 1040,
                 y: 280,
-                description: 'Pure function (NO LLM) that merges all 6 analysis results into a single structured object. Zero cost, instant execution.',
-                code: `export function aggregateAnalyses(
-  validatedData: ValidatedIdea,
-  basicInfo: BasicInfoAnalysis,
-  technologies: TechnologiesAnalysis,
-  businessContext: BusinessContextAnalysis,
+                description: 'A pure TypeScript function (NO LLM) that combines all 6 analysis outputs into a unified structure. Merges, deduplicates, and organizes data for the next stages. Zero API cost.',
+                code: `function aggregateAnalyses(
+  validated: ValidatedIdea,
+  basic: BasicInfoAnalysis,
+  tech: TechAnalysis,
+  business: BusinessAnalysis,
   regulations: RegulationsAnalysis,
   differentiators: DifferentiatorsAnalysis,
-  otherDetails: OtherDetailsAnalysis
+  other: OtherAspectsAnalysis
 ): AggregatedData {
   return {
-    basicInfo,
-    technologies,
-    businessContext,
-    regulations,
-    differentiators,
-    otherDetails,
-    originalData: validatedData
+    // Combine all analyses
+    summary: {
+      headline: basic.headline,
+      tagline: basic.tagline,
+      category: basic.category,
+    },
+    technical: { ...tech },
+    business: { ...business },
+    compliance: { ...regulations },
+    competitive: { ...differentiators },
+    future: { ...other },
+    metadata: {
+      processedAt: new Date().toISOString(),
+      validatedBy: "claude-3-haiku",
+    }
   };
 }`,
                 details: [
                     { label: 'Type', value: 'Pure Function' },
                     { label: 'LLM Cost', value: '$0' },
-                    { label: 'Purpose', value: 'Merge Data' },
-                    { label: 'Execution', value: 'Instant' }
+                    { label: 'Input', value: '7 Objects' },
+                    { label: 'Output', value: 'AggregatedData' }
                 ]
             },
             {
                 id: 'htmlbuilder',
                 title: 'HTML Builder',
-                subtitle: 'claude-3-haiku',
+                subtitle: 'Pure Function',
                 icon: '🏗️',
                 iconClass: 'builder',
-                tags: ['LLM', 'Sequential'],
-                tagTypes: ['llm', 'sequential'],
+                tags: ['Function', 'Sequential'],
+                tagTypes: ['function', 'sequential'],
                 x: 1360,
                 y: 280,
-                description: 'Acts as a CONTENT STRATEGIST for a top consulting firm. Creates compelling page structure with sections (hero, features, tech, business, social-proof, CTA), generates headlines and content that sells the idea to decision makers.',
-                schema: `const HTMLBuilderOutputSchema = z.object({
-  pageTitle: z.string(),
-  sections: z.array(z.object({
-    id: z.string(),
-    type: z.enum([
-      "hero", "features", "tech", 
-      "business", "social-proof", "cta"
-    ]),
-    content: z.object({
-      title: z.string(),
-      subtitle: z.string().optional(),
-      items: z.array(z.string()).optional(),
-      badges: z.array(z.string()).optional(),
-      highlight: z.string().optional()
-    })
-  })),
-  callToAction: z.object({
-    primary: z.string(),
-    secondary: z.string().optional()
-  }),
-  metadata: z.object({
-    category: z.string(),
-    readinessLevel: z.string(),
-    innovationLevel: z.string()
-  })
-});`,
+                description: 'A pure TypeScript function (NO LLM) that creates structured HTML sections from the aggregated data. Prepares the content structure before visual styling is applied.',
+                code: `function buildHtmlStructure(
+  aggregated: AggregatedData
+): HtmlSections {
+  return {
+    header: buildHeader(aggregated.summary),
+    techSection: buildTechSection(aggregated.technical),
+    businessSection: buildBusinessSection(aggregated.business),
+    complianceSection: buildComplianceSection(aggregated.compliance),
+    competitiveSection: buildCompetitiveSection(aggregated.competitive),
+    futureSection: buildFutureSection(aggregated.future),
+    footer: buildFooter(aggregated.metadata)
+  };
+}`,
                 details: [
-                    { label: 'Model', value: 'claude-3-haiku' },
-                    { label: 'Role', value: 'Content Strategist' },
-                    { label: 'Output', value: 'Page Structure' },
-                    { label: 'Execution', value: 'Sequential' }
+                    { label: 'Type', value: 'Pure Function' },
+                    { label: 'LLM Cost', value: '$0' },
+                    { label: 'Input', value: 'AggregatedData' },
+                    { label: 'Output', value: 'HtmlSections' }
                 ]
             },
             {
                 id: 'statistician',
-                title: 'Statistician',
+                title: 'Statistician Agent',
                 subtitle: 'claude-3-haiku',
                 icon: '📊',
                 iconClass: 'stats',
-                tags: ['LLM', 'Scoring'],
+                tags: ['LLM', 'Sequential'],
                 tagTypes: ['llm', 'sequential'],
                 x: 1680,
                 y: 280,
-                description: 'Acts as a SENIOR INVESTMENT COMMITTEE MEMBER at Deutsche Bank. Uses pre-scoring results (credibility, banking relevance, maxPossibleScore) from validator to cap scores. Evaluates on 5 axes: Innovation, Feasibility, Business Value, Compliance, and Readiness. Provides final recommendation.',
+                description: 'Acts as a SENIOR DATA SCIENTIST at Deutsche Bank. Calculates final scores based on all analyses, applies caps from Validator\'s maxPossibleScore, generates final recommendation, and creates score breakdowns.',
                 schema: `const StatisticsOutputSchema = z.object({
-  overallScore: z.number().min(0).max(100)
-    .describe("Weighted average, capped by maxPossibleScore"),
-  categoryScores: z.object({
-    innovation: z.number().min(0).max(100),
-    feasibility: z.number().min(0).max(100),
-    businessValue: z.number().min(0).max(100),
-    compliance: z.number().min(0).max(100),
-    readiness: z.number().min(0).max(100)
-  }),
-  strengths: z.array(z.string()).min(1).max(5),
-  improvements: z.array(z.string()).min(1).max(5),
+  // Individual scores (capped by maxPossibleScore)
+  innovationScore: z.number().min(0).max(100),
+  technicalScore: z.number().min(0).max(100),
+  businessScore: z.number().min(0).max(100),
+  complianceScore: z.number().min(0).max(100),
+  differentiationScore: z.number().min(0).max(100),
+  
+  // Final weighted score
+  finalScore: z.number().min(0).max(100),
+  
+  // Final recommendation
   recommendation: z.enum([
     "highly-recommended", "recommended",
     "consider", "needs-work", "not-recommended"
   ]),
-  summaryText: z.string()
-    .describe("Executive summary for committee")
+  
+  // Score breakdown explanation
+  scoreBreakdown: z.string(),
+  
+  // Key factors
+  topStrengths: z.array(z.string()).length(3),
+  topWeaknesses: z.array(z.string()).length(3)
 });`,
                 details: [
                     { label: 'Model', value: 'claude-3-haiku' },
-                    { label: 'Role', value: 'Investment Committee' },
-                    { label: 'Scoring', value: '5 Axes + Cap' },
-                    { label: 'Output', value: 'Final Verdict' }
+                    { label: 'Role', value: 'Data Scientist' },
+                    { label: 'Method', value: 'generateObject()' },
+                    { label: 'Execution', value: 'Sequential' }
                 ]
             },
             {
@@ -1189,14 +1353,13 @@
                 subtitle: 'Pure Function',
                 icon: '🎨',
                 iconClass: 'visual',
-                tags: ['No LLM', 'HTML Gen'],
+                tags: ['Function', 'Sequential'],
                 tagTypes: ['function', 'sequential'],
                 x: 2000,
                 y: 280,
-                description: 'Pure function that generates the complete Teletext-style HTML page with all data, scores, and styling. Uses VT323 monospace font, dark blue background (#0000AA), and classic teletext colors (cyan, yellow, magenta, green). Zero LLM cost.',
-                code: `export function designVisualOutput(
-  data: AggregatedData,
-  htmlContent: HTMLBuilderOutput,
+                description: 'A pure TypeScript function (NO LLM) that applies Teletext styling to the HTML structure. Creates the final retro-styled output with progress bars, color coding, and visual elements.',
+                code: `function applyTeletextStyling(
+  htmlSections: HtmlSections,
   statistics: StatisticsOutput,
   originalTitle: string
 ): FinalVisualOutput {
@@ -1294,6 +1457,7 @@ interface PipelineResult {
         let zoom = 1;
         let panX = 0;
         let panY = 0;
+        let flowAnimations = []; // Store animation references
 
         // ===== INITIALIZE =====
         function init() {
@@ -1306,7 +1470,7 @@ interface PipelineResult {
         function createNodes() {
             const container = document.getElementById('nodesContainer');
             const parallelGroup = document.getElementById('parallelGroup');
-            
+
             // Position parallel group
             parallelGroup.style.left = '700px';
             parallelGroup.style.top = '30px';
@@ -1320,7 +1484,7 @@ interface PipelineResult {
                 el.setAttribute('data-id', node.id);
                 el.style.left = node.x + 'px';
                 el.style.top = node.y + 'px';
-                
+
                 el.innerHTML = `
                     <div class="connection-point left"></div>
                     <div class="connection-point right"></div>
@@ -1338,7 +1502,7 @@ interface PipelineResult {
                         </div>
                     </div>
                 `;
-                
+
                 el.onclick = () => showPanel(node.id);
                 container.appendChild(el);
             });
@@ -1347,40 +1511,59 @@ interface PipelineResult {
         // ===== DRAW CONNECTIONS =====
         function drawConnections() {
             const svg = document.getElementById('connectionsSvg');
-            
-            // Clear existing paths
+
+            // Clear existing paths (but keep defs)
             svg.querySelectorAll('path').forEach(p => p.remove());
-            
+            svg.querySelectorAll('circle.flow-dot').forEach(c => c.remove());
+
             connections.forEach((conn, idx) => {
                 const fromNode = document.getElementById(`node-${conn.from}`);
                 const toNode = document.getElementById(`node-${conn.to}`);
-                
+
                 if (!fromNode || !toNode) return;
-                
+
                 const fromRect = fromNode.getBoundingClientRect();
                 const toRect = toNode.getBoundingClientRect();
                 const container = document.getElementById('canvasContainer').getBoundingClientRect();
-                
+
                 // Calculate connection points
                 const fromX = fromRect.right - container.left - 7;
                 const fromY = fromRect.top - container.top + fromRect.height / 2;
                 const toX = toRect.left - container.left + 7;
                 const toY = toRect.top - container.top + toRect.height / 2;
-                
+
                 // Create smooth bezier curve
                 const midX = (fromX + toX) / 2;
                 const controlOffset = Math.min(Math.abs(toX - fromX) * 0.5, 100);
-                
+
                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 const d = `M ${fromX} ${fromY} C ${fromX + controlOffset} ${fromY}, ${toX - controlOffset} ${toY}, ${toX} ${toY}`;
-                
+
                 path.setAttribute('d', d);
                 path.setAttribute('class', 'connection-path');
                 path.setAttribute('data-from', conn.from);
                 path.setAttribute('data-to', conn.to);
                 path.setAttribute('marker-end', 'url(#arrowhead)');
-                
+
+                // Add unique ID for animation reference
+                path.setAttribute('id', `path-${conn.from}-${conn.to}`);
+
                 svg.appendChild(path);
+
+                // Create animated flow dot for each path
+                const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                dot.setAttribute('r', '4');
+                dot.setAttribute('class', 'flow-dot');
+                dot.setAttribute('data-path', `path-${conn.from}-${conn.to}`);
+
+                // Create animation along path
+                const animateMotion = document.createElementNS('http://www.w3.org/2000/svg', 'animateMotion');
+                animateMotion.setAttribute('dur', '2s');
+                animateMotion.setAttribute('repeatCount', 'indefinite');
+                animateMotion.setAttribute('path', d);
+
+                dot.appendChild(animateMotion);
+                svg.appendChild(dot);
             });
         }
 
@@ -1389,16 +1572,22 @@ interface PipelineResult {
             const container = document.getElementById('canvasContainer');
             let isPanning = false;
             let startX, startY;
-            
+
+            // Set initial cursor to grab
+            container.style.cursor = 'grab';
+
             container.addEventListener('mousedown', (e) => {
-                if (e.target === container || e.target.classList.contains('connections-svg')) {
+                // Allow panning from anywhere except nodes and panel
+                if (!e.target.closest('.node') && !e.target.closest('.panel') &&
+                    !e.target.closest('.zoom-controls') && !e.target.closest('.flow-legend')) {
                     isPanning = true;
                     startX = e.clientX - panX;
                     startY = e.clientY - panY;
                     container.style.cursor = 'grabbing';
+                    e.preventDefault();
                 }
             });
-            
+
             document.addEventListener('mousemove', (e) => {
                 if (isPanning) {
                     panX = e.clientX - startX;
@@ -1406,11 +1595,29 @@ interface PipelineResult {
                     updateTransform();
                 }
             });
-            
+
             document.addEventListener('mouseup', () => {
-                isPanning = false;
-                container.style.cursor = 'default';
+                if (isPanning) {
+                    isPanning = false;
+                    container.style.cursor = 'grab';
+                }
             });
+
+            // Mouse leave should also stop panning
+            container.addEventListener('mouseleave', () => {
+                if (isPanning) {
+                    isPanning = false;
+                    container.style.cursor = 'grab';
+                }
+            });
+
+            // Add scroll wheel zoom
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                zoom = Math.max(0.3, Math.min(2.5, zoom + delta));
+                updateTransform();
+            }, { passive: false });
         }
 
         function updateTransform() {
@@ -1421,12 +1628,12 @@ interface PipelineResult {
         }
 
         function zoomIn() {
-            zoom = Math.min(zoom + 0.1, 2);
+            zoom = Math.min(zoom + 0.1, 2.5);
             updateTransform();
         }
 
         function zoomOut() {
-            zoom = Math.max(zoom - 0.1, 0.5);
+            zoom = Math.max(zoom - 0.1, 0.3);
             updateTransform();
         }
 
@@ -1441,15 +1648,15 @@ interface PipelineResult {
         function showPanel(id) {
             const node = nodes.find(n => n.id === id);
             if (!node) return;
-            
+
             // Update selection
             document.querySelectorAll('.node').forEach(n => n.classList.remove('selected'));
             document.getElementById(`node-${id}`).classList.add('selected');
-            
+
             // Update panel
             document.getElementById('panelIcon').textContent = node.icon;
             document.getElementById('panelTitle').textContent = node.title;
-            
+
             let html = `
                 <div class="panel-section">
                     <div class="panel-section-title">Description</div>
@@ -1458,7 +1665,7 @@ interface PipelineResult {
                     </div>
                 </div>
             `;
-            
+
             if (node.schema) {
                 html += `
                     <div class="panel-section">
@@ -1467,7 +1674,7 @@ interface PipelineResult {
                     </div>
                 `;
             }
-            
+
             if (node.code) {
                 html += `
                     <div class="panel-section">
@@ -1476,7 +1683,7 @@ interface PipelineResult {
                     </div>
                 `;
             }
-            
+
             if (node.details) {
                 html += `
                     <div class="panel-section">
@@ -1492,7 +1699,7 @@ interface PipelineResult {
                     </div>
                 `;
             }
-            
+
             document.getElementById('panelContent').innerHTML = html;
             document.getElementById('panel').classList.add('open');
         }
@@ -1506,19 +1713,19 @@ interface PipelineResult {
         async function runPipeline() {
             if (isRunning) return;
             isRunning = true;
-            
+
             const btn = document.getElementById('runBtn');
             const progress = document.getElementById('progressBar');
             const fill = document.getElementById('progressFill');
             const status = document.getElementById('progressStatus');
-            
+
             resetPipeline();
             await sleep(100);
-            
+
             btn.classList.add('running');
             btn.innerHTML = '⏳ Running...';
             progress.classList.add('visible');
-            
+
             const steps = [
                 { ids: ['input'], msg: 'Processing form input...', pct: 8 },
                 { ids: ['validator'], msg: 'Validating & fraud detection...', pct: 18 },
@@ -1529,13 +1736,13 @@ interface PipelineResult {
                 { ids: ['visual'], msg: 'Designing Teletext output...', pct: 95 },
                 { ids: ['output'], msg: 'Complete!', pct: 100 }
             ];
-            
+
             for (let i = 0; i < steps.length; i++) {
                 const step = steps[i];
-                
+
                 status.textContent = step.msg;
                 fill.style.width = step.pct + '%';
-                
+
                 // Set running state
                 step.ids.forEach(id => {
                     document.getElementById(`node-${id}`).classList.add('running');
@@ -1544,10 +1751,14 @@ interface PipelineResult {
                         p.classList.add('active');
                         p.setAttribute('marker-end', 'url(#arrowhead-active)');
                     });
+                    // Activate flow dots for these paths
+                    document.querySelectorAll(`circle[data-path*="-${id}"]`).forEach(dot => {
+                        dot.classList.add('active');
+                    });
                 });
-                
+
                 await sleep(step.parallel ? 2000 : 800);
-                
+
                 // Set completed state
                 step.ids.forEach(id => {
                     const node = document.getElementById(`node-${id}`);
@@ -1559,13 +1770,18 @@ interface PipelineResult {
                         p.classList.add('completed');
                         p.setAttribute('marker-end', 'url(#arrowhead-completed)');
                     });
+                    // Complete flow dots
+                    document.querySelectorAll(`circle[data-path*="-${id}"]`).forEach(dot => {
+                        dot.classList.remove('active');
+                        dot.classList.add('completed');
+                    });
                 });
             }
-            
+
             status.textContent = '✅ Pipeline completed!';
             btn.classList.remove('running');
             btn.innerHTML = '✓ Complete';
-            
+
             await sleep(3000);
             progress.classList.remove('visible');
             btn.innerHTML = '▶ Run Pipeline';
@@ -1580,6 +1796,9 @@ interface PipelineResult {
             document.querySelectorAll('.connection-path').forEach(p => {
                 p.classList.remove('active', 'completed');
                 p.setAttribute('marker-end', 'url(#arrowhead)');
+            });
+            document.querySelectorAll('.flow-dot').forEach(dot => {
+                dot.classList.remove('active', 'completed');
             });
             document.getElementById('progressFill').style.width = '0%';
         }
@@ -1597,7 +1816,7 @@ interface PipelineResult {
 
         // Close panel when clicking on canvas (outside nodes)
         document.getElementById('canvasContainer').addEventListener('click', (e) => {
-            if (e.target.id === 'canvasContainer' || 
+            if (e.target.id === 'canvasContainer' ||
                 e.target.classList.contains('connections-svg') ||
                 e.target.classList.contains('nodes-container')) {
                 closePanel();
@@ -1609,4 +1828,5 @@ interface PipelineResult {
         window.onresize = drawConnections;
     </script>
 </body>
+
 </html>
